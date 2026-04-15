@@ -506,14 +506,14 @@
     </div>
     <div class="header-right">
       <div class="time-label">Current time:</div>
-      <div class="time-value">2:24 PM</div>
+      <div class="time-value" id="current-time">—</div>
     </div>
   </header>
 
   <!-- ZONE 2: Status Bar -->
   <div class="status-bar">
     <div class="status-projected">
-      <span class="proj-label">Projected team finish</span>
+      <span class="proj-label" id="projLabel">Projected team finish</span>
       <span class="proj-value" id="statusProjectedFinish">—</span>
     </div>
     <div class="status-cols">
@@ -551,7 +551,7 @@
   <!-- ZONE 4: Footer -->
   <footer class="footer">
     <button class="footer-btn">Export</button>
-    <div class="footer-saved">Last saved: 2:24 PM</div>
+    <div class="footer-saved" id="footerSaved">Last saved: —</div>
     <button class="footer-btn" onclick="showConfig()">Settings</button>
   </footer>
 
@@ -929,29 +929,53 @@
   }
 
   function renderStatusBar(computedLegs) {
-    const activeIndex = computedLegs.findIndex(l => !l.actualFinish);
-    const activeLeg   = activeIndex >= 0 ? computedLegs[activeIndex] : null;
-    const nextLeg     = activeIndex >= 0 && activeIndex < 23 ? computedLegs[activeIndex + 1] : null;
-    const lastLeg     = computedLegs[23];
+    const raceComplete = computedLegs.every(l => l.actualFinish);
+    const activeIndex  = computedLegs.findIndex(l => !l.actualFinish);
+    const activeLeg    = activeIndex >= 0 ? computedLegs[activeIndex] : null;
+    const nextLeg      = activeIndex >= 0 && activeIndex < 23 ? computedLegs[activeIndex + 1] : null;
+    const lastLeg      = computedLegs[23];
 
-    document.getElementById('statusCurrentLoop').textContent =
-      activeLeg ? `${activeLeg.leg} – ${activeLeg.runner}` : 'Done';
-    document.getElementById('statusNextRunner').textContent =
-      nextLeg ? nextLeg.runner : '—';
-    document.getElementById('statusNextStart').textContent =
-      nextLeg ? nextLeg.startTimeStr : '—';
+    // Row 1 — projected / final finish
+    document.getElementById('projLabel').textContent =
+      raceComplete ? 'Final team finish' : 'Projected team finish';
     document.getElementById('statusProjectedFinish').textContent =
       lastLeg.finishTimeStr;
+
+    // Row 2 — race complete state
+    if (raceComplete) {
+      document.getElementById('statusCurrentLoop').textContent = 'Complete';
+      document.getElementById('statusNextRunner').textContent  = '—';
+      document.getElementById('statusNextStart').textContent   = '—';
+      return;
+    }
+
+    // Row 2 — normal state
+    const currentText = activeLeg
+      ? `${activeLeg.leg} – ${(activeLeg.runner || '—')}`
+      : '—';
+    document.getElementById('statusCurrentLoop').textContent = currentText;
+    document.getElementById('statusNextRunner').textContent  =
+      nextLeg ? (nextLeg.runner || '—') : '—';
+    document.getElementById('statusNextStart').textContent   =
+      nextLeg ? nextLeg.startTimeStr : '—';
   }
 
-  function updateFooterSaved() {
+  function nowToTimeStr() {
     const now  = new Date();
     const h24  = now.getHours();
     const min  = String(now.getMinutes()).padStart(2, '0');
     const ampm = h24 < 12 ? 'AM' : 'PM';
     const h12  = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
-    document.querySelector('.footer-saved').textContent =
-      `Last saved: ${h12}:${min} ${ampm}`;
+    return `${h12}:${min} ${ampm}`;
+  }
+
+  function updateCurrentTime() {
+    document.getElementById('current-time').textContent = nowToTimeStr();
+  }
+
+  function updateFooterSaved() {
+    document.getElementById('footerSaved').textContent =
+      `Last saved: ${nowToTimeStr()}`;
   }
 
   function fullRender() {
@@ -1028,9 +1052,10 @@
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────
-  // Initialize raceLegs if not already in localStorage
   if (!localStorage.getItem('raceLegs')) initRaceLegs(false);
   fullRender();
+  updateCurrentTime();
+  setInterval(updateCurrentTime, 60000);
 </script>
 
 </body>
