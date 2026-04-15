@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Tracker Wireframes v1</title>
+<style>
+  body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 2rem; }
+  h1 { font-size: 18px; font-weight: 500; color: #333; margin: 0 0 4px; }
+  p { font-size: 13px; color: #777; margin: 0 0 2rem; }
+  .wf-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 900px; }
+  .wf-label { font-size: 12px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; }
+  .device { background: #111; border-radius: 16px; border: 2px solid #333; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; width: 100%; }
+  .dh { background: #1a1a1a; border-bottom: 1px solid #333; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .dh-left { display: flex; flex-direction: column; }
+  .dh-title { font-size: 11px; color: #fff; font-weight: 500; }
+  .dh-sub { font-size: 9px; color: #888; }
+  .dh-time-wrap { display: flex; flex-direction: column; align-items: flex-end; }
+  .dh-time-label { font-size: 8px; color: #666; }
+  .dh-time { font-size: 11px; color: #bbb; font-weight: 400; }
+  .proj-bar { background: #1a2e1a; border-bottom: 1px solid #2d5a2d; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .proj-label { font-size: 9px; color: #5a9e5a; text-transform: uppercase; letter-spacing: 0.05em; }
+  .proj-val { font-size: 15px; color: #7dcc7d; font-weight: 500; }
+  .status { background: #0d0d0d; border-bottom: 1px solid #333; padding: 5px 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-label { font-size: 8px; color: #555; }
+  .stat-val { font-size: 10px; color: #ddd; font-weight: 500; }
+  .tbl-head { display: grid; grid-template-columns: 18px 40px 20px 1fr 1fr 1fr; background: #1a1a1a; border-bottom: 1px solid #444; padding: 5px 6px; gap: 2px; }
+  .th { font-size: 8px; color: #777; font-weight: 500; }
+  .tbl-body { overflow: hidden; }
+  .tbl-row { display: grid; grid-template-columns: 18px 40px 20px 1fr 1fr 1fr; padding: 7px 6px; border-bottom: 1px solid #1e1e1e; gap: 2px; }
+  .tbl-row.green { background: #003300; }
+  .tbl-row.yellow { background: #333300; }
+  .tbl-row.red { background: #330000; }
+  .tbl-row.active-row { outline: 1px solid #555; }
+  .td { font-size: 9px; color: #ccc; display: flex; align-items: center; }
+  .td.actual { font-weight: 700; color: #fff; }
+  .td.est { color: #999; font-style: italic; font-weight: 400; }
+  .td.tap { border: 1px dashed #444; border-radius: 3px; padding: 1px 3px; color: #555; font-style: italic; font-size: 8px; }
+  .footer { background: #1a1a1a; border-top: 1px solid #333; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .f-saved { font-size: 8px; color: #444; }
+  .btn-sm { font-size: 9px; color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 3px 7px; background: #222; }
+  .modal-overlay { background: rgba(0,0,0,0.75); padding: 8px; min-height: 300px; }
+  .modal { background: #1c1c1c; border: 1px solid #444; border-radius: 8px; padding: 10px; }
+  .modal-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+  .modal-title { font-size: 11px; color: #fff; font-weight: 500; }
+  .modal-x { font-size: 12px; color: #555; }
+  .mrow { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #1e1e1e; }
+  .ml { font-size: 9px; color: #666; }
+  .mv { font-size: 9px; color: #ccc; }
+  .mv.actual { font-weight: 700; color: #fff; }
+  .mv.est-val { color: #555; font-style: italic; }
+  .mv.live { color: #4a9eff; font-size: 8px; }
+  .mv.none { color: #333; }
+  .edit-tap { font-size: 9px; border: 1px solid #4a9eff; border-radius: 3px; padding: 2px 8px; color: #555; font-style: italic; background: #0a1a2a; }
+  .runner-drop { font-size: 9px; color: #ccc; background: #2a2a2a; border: 1px solid #444; border-radius: 3px; padding: 2px 6px; display: flex; justify-content: space-between; width: 70px; }
+  .modal-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .mbtn { flex: 1; font-size: 9px; border-radius: 4px; padding: 5px; text-align: center; }
+  .mbtn.cancel { background: #222; color: #777; border: 1px solid #333; }
+  .mbtn.confirm { background: #1a3a1a; color: #4caf50; border: 1px solid #4caf50; }
+  .kp-display { background: #0a0a0a; border-bottom: 1px solid #333; padding: 12px 10px; text-align: center; }
+  .kp-time { font-size: 28px; color: #fff; font-weight: 500; letter-spacing: 2px; }
+  .kp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #333; }
+  .kp-btn { background: #1a1a1a; padding: 11px 4px; text-align: center; font-size: 14px; color: #ddd; }
+  .kp-btn.sm { font-size: 9px; color: #999; }
+  .kp-btn.del { color: #777; }
+  .kp-actions { display: flex; gap: 1px; background: #333; }
+  .kp-action { flex: 1; background: #111; padding: 9px; text-align: center; font-size: 10px; }
+  .kp-action.cancel { color: #777; }
+  .kp-action.confirm { color: #4caf50; font-weight: 500; }
+  .cfg-body { padding: 8px 10px; overflow: hidden; }
+  .cfg-sec-label { font-size: 8px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin: 8px 0 4px; }
+  .cfg-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
+  .cfg-label { font-size: 9px; color: #888; }
+  .cfg-tap { font-size: 9px; color: #ccc; background: #0a1a2a; border: 1px solid #4a9eff; border-radius: 3px; padding: 3px 6px; width: 90px; text-align: right; display: flex; align-items: center; justify-content: flex-end; }
+  .cfg-runners { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: 4px 0 6px; }
+  .cfg-runner { background: #2a2a2a; border: 1px solid #333; border-radius: 3px; padding: 3px 6px; font-size: 9px; color: #ccc; display: flex; align-items: center; gap: 4px; }
+  .runner-num { font-size: 8px; color: #444; width: 10px; }
+  .night-row { display: flex; align-items: center; gap: 4px; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
+  .night-label { font-size: 9px; color: #888; flex: 1; }
+  .night-sep { font-size: 9px; color: #444; }
+  .cfg-btns { display: flex; gap: 5px; padding: 8px 10px; border-top: 1px solid #333; }
+  .cfg-btn { flex: 1; font-size: 9px; border-radius: 4px; padding: 6px 4px; text-align: center; }
+  .cfg-btn.save { background: #1a3a1a; color: #4caf50; border: 1px solid #4caf50; }
+  .cfg-btn.reset { background: #222; color: #777; border: 1px solid #333; }
+  .cfg-btn.restore { background: #222; color: #4a9eff; border: 1px solid #4a9eff; }
+</style>
+</head>
+<body>
+<h1>Race Tracker — UI Wireframes</h1>
+<p>Version 1 — April 15, 2026 &nbsp;·&nbsp; Four screens: Main view, Row detail modal, Time entry keypad, Config panel</p>
+
+<div class="wf-wrap">
+
+  <div>
+    <p class="wf-label">1 — Main view</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left">
+          <span class="dh-title">Party Pace</span>
+          <span class="dh-sub">Ragnar Trail Atlanta 2026</span>
+        </div>
+        <div class="dh-time-wrap">
+          <span class="dh-time-label">Current time:</span>
+          <span class="dh-time">2:24 PM</span>
+        </div>
+      </div>
+      <div class="proj-bar">
+        <span class="proj-label">Projected team finish</span>
+        <span class="proj-val">11:14 AM</span>
+      </div>
+      <div class="status">
+        <div class="stat-item"><span class="stat-label">Current loop</span><span class="stat-val">6 – Ray</span></div>
+        <div class="stat-item"><span class="stat-label">Next runner</span><span class="stat-val">Jenny</span></div>
+        <div class="stat-item"><span class="stat-label">Next start</span><span class="stat-val">3:35 PM</span></div>
+      </div>
+      <div class="tbl-head">
+        <span class="th">#</span><span class="th">Runner</span><span class="th">Lp</span><span class="th">Start</span><span class="th">Est fin</span><span class="th">Actual</span>
+      </div>
+      <div class="tbl-body">
+        <div class="tbl-row green"><span class="td">1</span><span class="td">Wendy</span><span class="td">G</span><span class="td actual">9:00 AM</span><span class="td actual">9:50 AM</span><span class="td actual">9:50 AM</span></div>
+        <div class="tbl-row yellow"><span class="td">2</span><span class="td">Kristine</span><span class="td">Y</span><span class="td actual">9:50 AM</span><span class="td actual">11:08 AM</span><span class="td actual">11:08 AM</span></div>
+        <div class="tbl-row red"><span class="td">3</span><span class="td">Scott</span><span class="td">R</span><span class="td actual">11:08 AM</span><span class="td actual">12:20 PM</span><span class="td actual">12:20 PM</span></div>
+        <div class="tbl-row green"><span class="td">4</span><span class="td">Jeff</span><span class="td">G</span><span class="td actual">12:20 PM</span><span class="td actual">1:13 PM</span><span class="td actual">1:13 PM</span></div>
+        <div class="tbl-row yellow"><span class="td">5</span><span class="td">Jason</span><span class="td">Y</span><span class="td actual">1:13 PM</span><span class="td actual">2:21 PM</span><span class="td actual">2:21 PM</span></div>
+        <div class="tbl-row red active-row"><span class="td">6</span><span class="td">Ray</span><span class="td">R</span><span class="td actual">2:21 PM</span><span class="td est">3:35 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row green"><span class="td">7</span><span class="td">Jenny</span><span class="td">G</span><span class="td est">3:35 PM</span><span class="td est">4:21 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row yellow"><span class="td">8</span><span class="td">Tim</span><span class="td">Y</span><span class="td est">4:21 PM</span><span class="td est">5:32 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row red"><span class="td">9</span><span class="td">Wendy</span><span class="td">R</span><span class="td est">5:32 PM</span><span class="td est">6:40 PM</span><span class="td tap">tap</span></div>
+      </div>
+      <div class="footer">
+        <span class="btn-sm">⬆ Export</span>
+        <span class="f-saved">Last saved 2:23 PM</span>
+        <span class="btn-sm">⚙ Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="wf-label">2 — Row detail modal</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left"><span class="dh-title">Party Pace</span><span class="dh-sub">Ragnar Trail Atlanta 2026</span></div>
+        <div class="dh-time-wrap"><span class="dh-time-label">Current time:</span><span class="dh-time">2:24 PM</span></div>
+      </div>
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal-hdr"><span class="modal-title">Leg 6 — Red</span><span class="modal-x">✕</span></div>
+          <div class="mrow"><span class="ml">Runner</span><span class="runner-drop"><span>Ray</span><span style="color:#555">▾</span></span></div>
+          <div class="mrow"><span class="ml">Loop miles</span><span class="mv">6.0 mi</span></div>
+          <div class="mrow"><span class="ml">Start</span><span class="mv actual">2:21 PM</span></div>
+          <div class="mrow"><span class="ml">Est finish</span><span class="mv est-val">3:35 PM</span></div>
+          <div class="mrow"><span class="ml">Actual finish</span><span class="edit-tap">3:35 PM</span></div>
+          <div class="mrow"><span class="ml">Status</span><span class="mv live">Estimated (Live)</span></div>
+          <div class="mrow"><span class="ml">Actual duration</span><span class="mv none">—</span></div>
+          <div class="mrow"><span class="ml">Actual pace</span><span class="mv none">—</span></div>
+          <div class="mrow"><span class="ml">Predicted pace</span><span class="mv">13:22/mi</span></div>
+          <div class="mrow"><span class="ml">Est duration</span><span class="mv est-val">1:20:12</span></div>
+          <div class="modal-btns">
+            <span class="mbtn cancel">Cancel</span>
+            <span class="mbtn confirm">Save changes</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span class="btn-sm">⬆ Export</span>
+        <span class="f-saved">Last saved 2:23 PM</span>
+        <span class="btn-sm">⚙ Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="wf-label">3 — Time entry keypad</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left"><span class="dh-title">Enter finish time</span><span class="dh-sub">Leg 6 — Ray</span></div>
+      </div>
+      <div class="kp-display"><div class="kp-time">03:35 PM</div></div>
+      <div class="kp-grid">
+        <div class="kp-btn">1</div><div class="kp-btn">2</div><div class="kp-btn">3</div>
+        <div class="kp-btn">4</div><div class="kp-btn">5</div><div class="kp-btn">6</div>
+        <div class="kp-btn">7</div><div class="kp-btn">8</div><div class="kp-btn">9</div>
+        <div class="kp-btn sm">AM/PM</div><div class="kp-btn">0</div><div class="kp-btn del">⌫</div>
+      </div>
+      <div class="kp-actions">
+        <div class="kp-action cancel">Cancel</div>
+        <div class="kp-action confirm">Confirm</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="wf-label">4 — Config panel</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left"><span class="dh-title">Settings</span></div>
+        <span class="btn-sm">✕ Close</span>
+      </div>
+      <div class="cfg-body">
+        <div class="cfg-sec-label">Race info</div>
+        <div class="cfg-field"><span class="cfg-label">Team name</span><span class="cfg-tap">Party Pace</span></div>
+        <div class="cfg-field"><span class="cfg-label">Event name</span><span class="cfg-tap">Ragnar ATL 2026</span></div>
+        <div class="cfg-field"><span class="cfg-label">Start time</span><span class="cfg-tap">9:00 AM</span></div>
+        <div class="cfg-sec-label">Runners (in order)</div>
+        <div class="cfg-runners">
+          <div class="cfg-runner"><span class="runner-num">1</span>Wendy</div>
+          <div class="cfg-runner"><span class="runner-num">2</span>Kristine</div>
+          <div class="cfg-runner"><span class="runner-num">3</span>Scott</div>
+          <div class="cfg-runner"><span class="runner-num">4</span>Jeff</div>
+          <div class="cfg-runner"><span class="runner-num">5</span>Jason</div>
+          <div class="cfg-runner"><span class="runner-num">6</span>Ray</div>
+          <div class="cfg-runner"><span class="runner-num">7</span>Jenny</div>
+          <div class="cfg-runner"><span class="runner-num">8</span>Tim</div>
+        </div>
+        <div class="cfg-sec-label">Loop distances</div>
+        <div class="cfg-field"><span class="cfg-label">Green</span><span class="cfg-tap">4.0 mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Yellow</span><span class="cfg-tap">5.0 mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Red</span><span class="cfg-tap">6.0 mi</span></div>
+        <div class="cfg-sec-label">Pace settings</div>
+        <div class="cfg-field"><span class="cfg-label">Avg pace</span><span class="cfg-tap">12:00 /mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Night adjustment</span><span class="cfg-tap">5%</span></div>
+        <div class="cfg-sec-label">Night hours</div>
+        <div class="night-row">
+          <span class="night-label">From</span>
+          <span class="cfg-tap" style="width:90px">8:00 PM</span>
+          <span class="night-sep">–</span>
+          <span class="cfg-tap" style="width:90px">7:00 AM</span>
+        </div>
+      </div>
+      <div class="cfg-btns">
+        <span class="cfg-btn reset">Reset</span>
+        <span class="cfg-btn restore">Restore</span>
+        <span class="cfg-btn save">Save</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
