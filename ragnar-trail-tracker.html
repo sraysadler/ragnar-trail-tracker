@@ -832,6 +832,25 @@
 
   // ── Core calculation chain ───────────────────────────────────────────────
 
+  // ── Forecasting helpers ──────────────────────────────────────────────────
+
+  function getPredictedPace(runnerName, history, configAvgPace) {
+    const paces = history[runnerName] || [];
+    if (paces.length === 0) return { pace: configAvgPace, isBaseline: true };
+    const avg = paces.reduce((sum, p) => sum + p, 0) / paces.length;
+    return { pace: avg, isBaseline: false };
+  }
+
+  function isNightLeg(startMinutes, nightStartMin, nightEndMin) {
+    // Normalize startMinutes to 0-1439 for comparison against night window
+    const s = ((startMinutes % 1440) + 1440) % 1440;
+    if (nightStartMin > nightEndMin) {
+      // Window crosses midnight (e.g. 8:00 PM → 7:00 AM)
+      return s >= nightStartMin || s < nightEndMin;
+    }
+    return s >= nightStartMin && s < nightEndMin;
+  }
+
   function calculateLegData() {
     const cfg  = loadConfig();
     const legs = loadRaceLegs();
@@ -841,16 +860,32 @@
       Yellow: parseMiles(cfg.yellowMiles),
       Red:    parseMiles(cfg.redMiles),
     };
-    const avgPace = parsePaceMinutes(cfg.avgPace);
+    const configAvgPace    = parsePaceMinutes(cfg.avgPace);
+    const nightAdjPct      = parseFloat(cfg.nightAdjustment) || 0;
+    const nightStartMin    = timeToMinutes(cfg.nightStart  || '8:00 PM');
+    const nightEndMin      = timeToMinutes(cfg.nightEnd    || '7:00 AM');
 
-    let prevFinish = timeToMinutes(cfg.raceStartTime); // extended minutes
+    // Runner pace history — built incrementally as legs are processed
+    const runnerHistory = {};
+
+    let prevFinish = timeToMinutes(cfg.raceStartTime);
 
     return LEG_DEFINITIONS.map((def, i) => {
-      const state       = legs[i] || {};
-      const loopMiles   = milesMap[def.loop] || 0;
-      const estDuration = avgPace * loopMiles;
+      const state     = legs[i] || {};
+      const runner    = state.runner || '';
+      const loopMiles = milesMap[def.loop] || 0;
 
-      const startMinutes    = prevFinish;
+      const startMinutes = prevFinish;
+
+      // Predicted pace for this runner based on history so far
+      const { pace: predictedPace, isBaseline } =
+        getPredictedPace(runner, runnerHistory, configAvgPace);
+
+      // Estimated duration with optional night adjustment
+      let estDuration = predictedPace * loopMiles;
+      const night = isNightLeg(startMinutes, nightStartMin, nightEndMin);
+      if (night) estDuration *= (1 + nightAdjPct / 100);
+
       const estFinishMinutes = startMinutes + estDuration;
 
       // Resolve actual finish to extended time
@@ -863,6 +898,11 @@
         actualFinishMinutes = extendTime(raw, startMinutes);
         actualDuration      = actualFinishMinutes - startMinutes;
         actualPace          = loopMiles > 0 ? actualDuration / loopMiles : null;
+        // Add to history for this runner's future legs
+        if (actualPace !== null) {
+          if (!runnerHistory[runner]) runnerHistory[runner] = [];
+          runnerHistory[runner].push(actualPace);
+        }
       }
 
       const finishMinutes = actualFinishMinutes !== null
@@ -871,16 +911,14 @@
 
       prevFinish = finishMinutes;
 
-      // Status
-      const anyPriorActual = legs.slice(0, i).some(l => l.actualFinish);
       const status = state.actualFinish
         ? 'Actual'
-        : anyPriorActual ? 'Estimated (Live)' : 'Estimated (Baseline)';
+        : isBaseline ? 'Estimated (Baseline)' : 'Estimated (Live)';
 
       return {
         ...def,
-        runner:         state.runner || '',
-        actualFinish:   state.actualFinish || null,
+        runner,
+        actualFinish:        state.actualFinish || null,
         loopMiles,
         startMinutes,
         estFinishMinutes,
@@ -888,10 +926,11 @@
         finishMinutes,
         actualDuration,
         actualPace,
+        isNight:             night,
         status,
-        startTimeStr:    minutesToTime(startMinutes),
-        estFinishStr:    minutesToTime(estFinishMinutes),
-        finishTimeStr:   minutesToTime(finishMinutes),
+        startTimeStr:        minutesToTime(startMinutes),
+        estFinishStr:        minutesToTime(estFinishMinutes),
+        finishTimeStr:       minutesToTime(finishMinutes),
       };
     });
   }
