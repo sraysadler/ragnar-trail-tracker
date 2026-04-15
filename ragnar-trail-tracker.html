@@ -175,7 +175,8 @@
     }
 
     .table-header .th:first-child,
-    .table-header .th:nth-child(3) {
+    .table-header .th:nth-child(3),
+    .table-header .th:last-child {
       text-align: center;
     }
 
@@ -212,8 +213,9 @@
       white-space: nowrap;
     }
 
-    .td-num  { text-align: center; color: #888; font-size: 12px; }
-    .td-loop { text-align: center; font-size: 12px; font-weight: 600; color: #aaa; }
+    .td-num    { text-align: center; color: #888; font-size: 12px; }
+    .td-loop   { text-align: center; font-size: 12px; font-weight: 600; color: #aaa; }
+    .td-actual { text-align: center; }
 
     /* Time cell styles */
     .time-actual {
@@ -228,8 +230,8 @@
 
     .time-unstarted {
       font-style: italic;
-      color: #555;
-      border: 1px dashed #444;
+      color: #666;
+      border: 1px dashed #666;
       border-radius: 3px;
       padding: 3px 6px;
       display: inline-block;
@@ -921,7 +923,7 @@
           <div class="td td-loop">${leg.initial}</div>
           <div class="td"><span class="${startClass}">${leg.startTimeStr}</span></div>
           <div class="td"><span class="time-estimated">${leg.estFinishStr}</span></div>
-          <div class="td">${actualCell}</div>
+          <div class="td td-actual">${actualCell}</div>
         </div>`;
     }).join('');
   }
