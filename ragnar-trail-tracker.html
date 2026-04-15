@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ragnar Trail Tracker</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background: #0d0d0d;
+      color: #ddd;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+    }
+
+    /* ── Outer shell: full viewport, no overflow ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════════
+       ZONE 1 — HEADER
+    ══════════════════════════════════════════ */
+    .header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+    }
+
+    .header-left .team-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .header-left .event-name {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .header-right .time-label {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.3;
+    }
+
+    .header-right .time-value {
+      font-size: 16px;
+      font-weight: 300;
+      color: #ddd;
+    }
+
+    /* ══════════════════════════════════════════
+       ZONE 2 — STATUS BAR
+    ══════════════════════════════════════════ */
+    .status-bar {
+      flex-shrink: 0;
+    }
+
+    /* Row 1 — projected finish */
+    .status-projected {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: #1a2e1a;
+      border-bottom: 1px solid #2d5a2d;
+    }
+
+    .status-projected .proj-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5a9e5a;
+    }
+
+    .status-projected .proj-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: #7dcc7d;
+    }
+
+    /* Row 2 — three columns */
+    .status-cols {
+      display: flex;
+      background: #0d0d0d;
+      border-bottom: 1px solid #333;
+    }
+
+    .status-col {
+      flex: 1;
+      padding: 6px 12px;
+      text-align: center;
+    }
+
+    .status-col + .status-col {
+      border-left: 1px solid #1e1e1e;
+    }
+
+    .status-col .col-label {
+      font-size: 10px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+    }
+
+    .status-col .col-value {
+      font-size: 13px;
+      color: #ddd;
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════════════════
+       ZONE 3 — RACE TABLE (scrollable)
+    ══════════════════════════════════════════ */
+    .table-zone {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Sticky column header row */
+    .table-header {
+      flex-shrink: 0;
+      display: flex;
+      background: #1a1a1a;
+      border-bottom: 1px solid #444;
+    }
+
+    /* Scrollable body */
+    .table-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Shared column layout */
+    .table-header,
+    .table-row {
+      display: grid;
+      grid-template-columns: 32px 80px 28px 1fr 1fr 1fr;
+      align-items: center;
+    }
+
+    .table-header .th {
+      padding: 8px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .table-header .th:first-child,
+    .table-header .th:nth-child(3) {
+      text-align: center;
+    }
+
+    /* Data rows */
+    .table-row {
+      min-height: 44px;
+      border-bottom: 1px solid #1e1e1e;
+      cursor: pointer;
+    }
+
+    .table-row:active {
+      filter: brightness(1.2);
+    }
+
+    /* Loop row background colors */
+    .row-green  { background: #003300; }
+    .row-yellow { background: #333300; }
+    .row-red    { background: #330000; }
+
+    /* Active leg */
+    .row-active {
+      outline: 1px solid #555;
+      outline-offset: -1px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .table-row .td {
+      padding: 6px 6px;
+      font-size: 13px;
+      color: #ddd;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .td-num  { text-align: center; color: #888; font-size: 12px; }
+    .td-loop { text-align: center; font-size: 12px; font-weight: 600; color: #aaa; }
+
+    /* Time cell styles */
+    .time-actual {
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .time-estimated {
+      font-style: italic;
+      color: #999;
+    }
+
+    .time-unstarted {
+      font-style: italic;
+      color: #555;
+      border: 1px dashed #444;
+      border-radius: 3px;
+      padding: 3px 6px;
+      display: inline-block;
+      line-height: 1.3;
+    }
+
+    /* ══════════════════════════════════════════
+       ZONE 4 — FOOTER
+    ══════════════════════════════════════════ */
+    .footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #1a1a1a;
+      border-top: 1px solid #333;
+    }
+
+    .footer-btn {
+      background: transparent;
+      border: 1px solid #444;
+      color: #888;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .footer-btn:active {
+      background: #2a2a2a;
+    }
+
+    .footer-saved {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ZONE 1: Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="team-name">Party Pace</div>
+      <div class="event-name">Ragnar Trail 2025</div>
+    </div>
+    <div class="header-right">
+      <div class="time-label">Current time:</div>
+      <div class="time-value">2:24 PM</div>
+    </div>
+  </header>
+
+  <!-- ZONE 2: Status Bar -->
+  <div class="status-bar">
+    <div class="status-projected">
+      <span class="proj-label">Projected team finish</span>
+      <span class="proj-value">10:08 AM</span>
+    </div>
+    <div class="status-cols">
+      <div class="status-col">
+        <div class="col-label">Current loop</div>
+        <div class="col-value">6 – Ray</div>
+      </div>
+      <div class="status-col">
+        <div class="col-label">Next runner</div>
+        <div class="col-value">Jenny</div>
+      </div>
+      <div class="status-col">
+        <div class="col-label">Next start</div>
+        <div class="col-value">3:35 PM</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONE 3: Race Table -->
+  <div class="table-zone">
+    <!-- Frozen header row -->
+    <div class="table-header">
+      <div class="th">#</div>
+      <div class="th">Runner</div>
+      <div class="th">Lp</div>
+      <div class="th">Start</div>
+      <div class="th">Est fin</div>
+      <div class="th">Actual</div>
+    </div>
+
+    <!-- Scrollable rows -->
+    <div class="table-body">
+
+      <!-- Leg 1 — completed -->
+      <div class="table-row row-green">
+        <div class="td td-num">1</div>
+        <div class="td">Wendy</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-actual">9:00 AM</span></div>
+        <div class="td"><span class="time-actual">9:48 AM</span></div>
+        <div class="td"><span class="time-actual">9:50 AM</span></div>
+      </div>
+
+      <!-- Leg 2 — completed -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">2</div>
+        <div class="td">Kristine</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-actual">9:50 AM</span></div>
+        <div class="td"><span class="time-actual">10:50 AM</span></div>
+        <div class="td"><span class="time-actual">11:08 AM</span></div>
+      </div>
+
+      <!-- Leg 3 — completed -->
+      <div class="table-row row-red">
+        <div class="td td-num">3</div>
+        <div class="td">Scott</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-actual">11:08 AM</span></div>
+        <div class="td"><span class="time-actual">12:20 PM</span></div>
+        <div class="td"><span class="time-actual">12:20 PM</span></div>
+      </div>
+
+      <!-- Leg 4 — completed -->
+      <div class="table-row row-green">
+        <div class="td td-num">4</div>
+        <div class="td">Jeff</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-actual">12:20 PM</span></div>
+        <div class="td"><span class="time-actual">1:08 PM</span></div>
+        <div class="td"><span class="time-actual">1:13 PM</span></div>
+      </div>
+
+      <!-- Leg 5 — completed -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">5</div>
+        <div class="td">Jason</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-actual">1:13 PM</span></div>
+        <div class="td"><span class="time-actual">2:13 PM</span></div>
+        <div class="td"><span class="time-actual">2:21 PM</span></div>
+      </div>
+
+      <!-- Leg 6 — ACTIVE -->
+      <div class="table-row row-red row-active">
+        <div class="td td-num">6</div>
+        <div class="td">Ray</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-actual">2:21 PM</span></div>
+        <div class="td"><span class="time-estimated">3:35 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 7 — estimated -->
+      <div class="table-row row-green">
+        <div class="td td-num">7</div>
+        <div class="td">Jenny</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">3:35 PM</span></div>
+        <div class="td"><span class="time-estimated">4:21 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 8 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">8</div>
+        <div class="td">Tim</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">4:21 PM</span></div>
+        <div class="td"><span class="time-estimated">5:21 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 9 -->
+      <div class="table-row row-red">
+        <div class="td td-num">9</div>
+        <div class="td">Wendy</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">5:02 PM</span></div>
+        <div class="td"><span class="time-estimated">6:14 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 10 -->
+      <div class="table-row row-green">
+        <div class="td td-num">10</div>
+        <div class="td">Kristine</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">6:10 PM</span></div>
+        <div class="td"><span class="time-estimated">6:58 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 11 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">11</div>
+        <div class="td">Scott</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">6:55 PM</span></div>
+        <div class="td"><span class="time-estimated">7:55 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 12 -->
+      <div class="table-row row-red">
+        <div class="td td-num">12</div>
+        <div class="td">Jeff</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">7:53 PM</span></div>
+        <div class="td"><span class="time-estimated">9:05 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 13 -->
+      <div class="table-row row-green">
+        <div class="td td-num">13</div>
+        <div class="td">Jason</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">9:06 PM</span></div>
+        <div class="td"><span class="time-estimated">9:56 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 14 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">14</div>
+        <div class="td">Ray</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">9:56 PM</span></div>
+        <div class="td"><span class="time-estimated">10:59 PM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 15 -->
+      <div class="table-row row-red">
+        <div class="td td-num">15</div>
+        <div class="td">Jenny</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">11:11 PM</span></div>
+        <div class="td"><span class="time-estimated">12:27 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 16 -->
+      <div class="table-row row-green">
+        <div class="td td-num">16</div>
+        <div class="td">Tim</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">12:26 AM</span></div>
+        <div class="td"><span class="time-estimated">1:16 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 17 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">17</div>
+        <div class="td">Wendy</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">1:06 AM</span></div>
+        <div class="td"><span class="time-estimated">2:09 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 18 -->
+      <div class="table-row row-red">
+        <div class="td td-num">18</div>
+        <div class="td">Kristine</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">2:20 AM</span></div>
+        <div class="td"><span class="time-estimated">3:36 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 19 -->
+      <div class="table-row row-green">
+        <div class="td td-num">19</div>
+        <div class="td">Scott</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">3:33 AM</span></div>
+        <div class="td"><span class="time-estimated">4:23 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 20 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">20</div>
+        <div class="td">Jeff</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">4:20 AM</span></div>
+        <div class="td"><span class="time-estimated">5:23 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 21 -->
+      <div class="table-row row-red">
+        <div class="td td-num">21</div>
+        <div class="td">Jason</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">5:25 AM</span></div>
+        <div class="td"><span class="time-estimated">6:41 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 22 -->
+      <div class="table-row row-green">
+        <div class="td td-num">22</div>
+        <div class="td">Ray</div>
+        <div class="td td-loop">G</div>
+        <div class="td"><span class="time-estimated">6:55 AM</span></div>
+        <div class="td"><span class="time-estimated">7:45 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 23 -->
+      <div class="table-row row-yellow">
+        <div class="td td-num">23</div>
+        <div class="td">Jenny</div>
+        <div class="td td-loop">Y</div>
+        <div class="td"><span class="time-estimated">7:49 AM</span></div>
+        <div class="td"><span class="time-estimated">8:49 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+      <!-- Leg 24 -->
+      <div class="table-row row-red">
+        <div class="td td-num">24</div>
+        <div class="td">Tim</div>
+        <div class="td td-loop">R</div>
+        <div class="td"><span class="time-estimated">8:56 AM</span></div>
+        <div class="td"><span class="time-estimated">10:08 AM</span></div>
+        <div class="td"><span class="time-unstarted">—</span></div>
+      </div>
+
+    </div><!-- /.table-body -->
+  </div><!-- /.table-zone -->
+
+  <!-- ZONE 4: Footer -->
+  <footer class="footer">
+    <button class="footer-btn">Export</button>
+    <div class="footer-saved">Last saved: 2:24 PM</div>
+    <button class="footer-btn">Settings</button>
+  </footer>
+
+</div><!-- /.app -->
+</body>
+</html>
