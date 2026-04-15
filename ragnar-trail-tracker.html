@@ -512,20 +512,20 @@
   <div class="status-bar">
     <div class="status-projected">
       <span class="proj-label">Projected team finish</span>
-      <span class="proj-value">10:08 AM</span>
+      <span class="proj-value" id="statusProjectedFinish">—</span>
     </div>
     <div class="status-cols">
       <div class="status-col">
         <div class="col-label">Current loop</div>
-        <div class="col-value">6 – Ray</div>
+        <div class="col-value" id="statusCurrentLoop">—</div>
       </div>
       <div class="status-col">
         <div class="col-label">Next runner</div>
-        <div class="col-value">Jenny</div>
+        <div class="col-value" id="statusNextRunner">—</div>
       </div>
       <div class="status-col">
         <div class="col-label">Next start</div>
-        <div class="col-value">3:35 PM</div>
+        <div class="col-value" id="statusNextStart">—</div>
       </div>
     </div>
   </div>
@@ -728,35 +728,268 @@
     nightEnd: '7:00 AM',
   };
 
-  function loadConfig() {
-    const stored = localStorage.getItem('raceConfig');
-    return stored ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(stored)) : Object.assign({}, DEFAULT_CONFIG);
+  // ── Time helpers ─────────────────────────────────────────────────────────
+
+  // Parse 'h:mm AM/PM' → minutes since midnight (0–1439)
+  function timeToMinutes(str) {
+    const m = String(str).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return 0;
+    let h = parseInt(m[1]);
+    const min = parseInt(m[2]);
+    const ampm = m[3].toUpperCase();
+    if (ampm === 'AM') { if (h === 12) h = 0; }
+    else               { if (h !== 12) h += 12; }
+    return h * 60 + min;
   }
 
-  // ── Table rendering ──────────────────────────────────────────────────────
-  function renderTable() {
+  // Extended minutes (may be > 1440) → 'h:mm AM/PM'
+  function minutesToTime(minutes) {
+    const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
+    const h24 = Math.floor(m / 60);
+    const min = m % 60;
+    const ampm = h24 < 12 ? 'AM' : 'PM';
+    const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+    return `${h12}:${String(min).padStart(2, '0')} ${ampm}`;
+  }
+
+  // Given a raw 0-1439 minute value and an extended reference time,
+  // return the extended-minutes version on the same or next day.
+  function extendTime(rawMinutes, referenceMinutes) {
+    const day = Math.floor(referenceMinutes / 1440);
+    let candidate = rawMinutes + day * 1440;
+    if (candidate < referenceMinutes) candidate += 1440;
+    return candidate;
+  }
+
+  // Normalize user-entered time string → 'h:mm AM/PM' or null if invalid
+  function normalizeTimeStr(str) {
+    const m = String(str).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return null;
+    const h = parseInt(m[1]);
+    const min = String(m[2]).padStart(2, '0');
+    const ampm = m[3].toUpperCase();
+    return `${h}:${min} ${ampm}`;
+  }
+
+  // Parse pace value from config: number (min/mi) or string like '12:00 /mi'
+  function parsePaceMinutes(val) {
+    if (typeof val === 'number') return val;
+    const str = String(val).trim();
+    const colonMatch = str.match(/(\d+):(\d+)/);
+    if (colonMatch) return parseInt(colonMatch[1]) + parseInt(colonMatch[2]) / 60;
+    return parseFloat(str) || 12.0;
+  }
+
+  // Parse miles value: number or string like '4.0 mi'
+  function parseMiles(val) {
+    if (typeof val === 'number') return val;
+    return parseFloat(String(val)) || 0;
+  }
+
+  // ── Config ───────────────────────────────────────────────────────────────
+
+  function loadConfig() {
+    const stored = localStorage.getItem('raceConfig');
+    return stored
+      ? Object.assign({}, DEFAULT_CONFIG, JSON.parse(stored))
+      : Object.assign({}, DEFAULT_CONFIG);
+  }
+
+  // ── Race legs state ──────────────────────────────────────────────────────
+
+  // Build a fresh raceLegs array from config runner names.
+  // If preserveActuals=true, carry over any existing actualFinish values.
+  function initRaceLegs(preserveActuals) {
     const cfg = loadConfig();
     const runners = [
       cfg.runner1, cfg.runner2, cfg.runner3, cfg.runner4,
       cfg.runner5, cfg.runner6, cfg.runner7, cfg.runner8,
     ];
+    let existing = [];
+    if (preserveActuals) {
+      try { existing = JSON.parse(localStorage.getItem('raceLegs')) || []; }
+      catch (e) { existing = []; }
+    }
+    const legs = LEG_DEFINITIONS.map((def, i) => ({
+      legNumber: def.leg,
+      loop:      def.loop,
+      runner:    runners[(def.leg - 1) % 8] || '',
+      actualFinish: (existing[i] && existing[i].actualFinish) || null,
+    }));
+    localStorage.setItem('raceLegs', JSON.stringify(legs));
+    return legs;
+  }
+
+  function loadRaceLegs() {
+    const stored = localStorage.getItem('raceLegs');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) { /* fall through */ }
+    }
+    return initRaceLegs(false);
+  }
+
+  // ── Core calculation chain ───────────────────────────────────────────────
+
+  function calculateLegData() {
+    const cfg  = loadConfig();
+    const legs = loadRaceLegs();
+
+    const milesMap = {
+      Green:  parseMiles(cfg.greenMiles),
+      Yellow: parseMiles(cfg.yellowMiles),
+      Red:    parseMiles(cfg.redMiles),
+    };
+    const avgPace = parsePaceMinutes(cfg.avgPace);
+
+    let prevFinish = timeToMinutes(cfg.raceStartTime); // extended minutes
+
+    return LEG_DEFINITIONS.map((def, i) => {
+      const state       = legs[i] || {};
+      const loopMiles   = milesMap[def.loop] || 0;
+      const estDuration = avgPace * loopMiles;
+
+      const startMinutes    = prevFinish;
+      const estFinishMinutes = startMinutes + estDuration;
+
+      // Resolve actual finish to extended time
+      let actualFinishMinutes = null;
+      let actualDuration      = null;
+      let actualPace          = null;
+
+      if (state.actualFinish) {
+        const raw = timeToMinutes(state.actualFinish);
+        actualFinishMinutes = extendTime(raw, startMinutes);
+        actualDuration      = actualFinishMinutes - startMinutes;
+        actualPace          = loopMiles > 0 ? actualDuration / loopMiles : null;
+      }
+
+      const finishMinutes = actualFinishMinutes !== null
+        ? actualFinishMinutes
+        : estFinishMinutes;
+
+      prevFinish = finishMinutes;
+
+      // Status
+      const anyPriorActual = legs.slice(0, i).some(l => l.actualFinish);
+      const status = state.actualFinish
+        ? 'Actual'
+        : anyPriorActual ? 'Estimated (Live)' : 'Estimated (Baseline)';
+
+      return {
+        ...def,
+        runner:         state.runner || '',
+        actualFinish:   state.actualFinish || null,
+        loopMiles,
+        startMinutes,
+        estFinishMinutes,
+        actualFinishMinutes,
+        finishMinutes,
+        actualDuration,
+        actualPace,
+        status,
+        startTimeStr:    minutesToTime(startMinutes),
+        estFinishStr:    minutesToTime(estFinishMinutes),
+        finishTimeStr:   minutesToTime(finishMinutes),
+      };
+    });
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  function renderTable(computedLegs) {
+    const activeIndex = computedLegs.findIndex(l => !l.actualFinish);
 
     const body = document.getElementById('tableBody');
-    body.innerHTML = LEG_DEFINITIONS.map(({ leg, initial, rowColor }) => {
-      const runner = runners[(leg - 1) % 8] || '';
+    body.innerHTML = computedLegs.map((leg, i) => {
+      const isActive   = i === activeIndex;
+      const prevActual = i === 0 || computedLegs[i - 1].actualFinish !== null;
+
+      const startClass = (leg.status === 'Actual' || prevActual)
+        ? 'time-actual' : 'time-estimated';
+
+      const actualCell = leg.actualFinish
+        ? `<span class="time-actual" onclick="enterActualFinish(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
+        : `<span class="time-unstarted" onclick="enterActualFinish(${i})">—</span>`;
+
+      const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #888;outline-offset:-1px;position:relative;z-index:1"'
+                                  : ' style="background:' + leg.rowColor + '"';
+
       return `
-        <div class="table-row" style="background:${rowColor}">
-          <div class="td td-num">${leg}</div>
-          <div class="td">${runner}</div>
-          <div class="td td-loop">${initial}</div>
-          <div class="td"><span class="time-estimated">—</span></div>
-          <div class="td"><span class="time-estimated">—</span></div>
-          <div class="td"><span class="time-unstarted">—</span></div>
+        <div class="table-row"${activeAttr}>
+          <div class="td td-num">${leg.leg}</div>
+          <div class="td">${leg.runner}</div>
+          <div class="td td-loop">${leg.initial}</div>
+          <div class="td"><span class="${startClass}">${leg.startTimeStr}</span></div>
+          <div class="td"><span class="time-estimated">${leg.estFinishStr}</span></div>
+          <div class="td">${actualCell}</div>
         </div>`;
     }).join('');
   }
 
+  function renderStatusBar(computedLegs) {
+    const activeIndex = computedLegs.findIndex(l => !l.actualFinish);
+    const activeLeg   = activeIndex >= 0 ? computedLegs[activeIndex] : null;
+    const nextLeg     = activeIndex >= 0 && activeIndex < 23 ? computedLegs[activeIndex + 1] : null;
+    const lastLeg     = computedLegs[23];
+
+    document.getElementById('statusCurrentLoop').textContent =
+      activeLeg ? `${activeLeg.leg} – ${activeLeg.runner}` : 'Done';
+    document.getElementById('statusNextRunner').textContent =
+      nextLeg ? nextLeg.runner : '—';
+    document.getElementById('statusNextStart').textContent =
+      nextLeg ? nextLeg.startTimeStr : '—';
+    document.getElementById('statusProjectedFinish').textContent =
+      lastLeg.finishTimeStr;
+  }
+
+  function updateFooterSaved() {
+    const now  = new Date();
+    const h24  = now.getHours();
+    const min  = String(now.getMinutes()).padStart(2, '0');
+    const ampm = h24 < 12 ? 'AM' : 'PM';
+    const h12  = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+    document.querySelector('.footer-saved').textContent =
+      `Last saved: ${h12}:${min} ${ampm}`;
+  }
+
+  function fullRender() {
+    const computed = calculateLegData();
+    renderTable(computed);
+    renderStatusBar(computed);
+    updateFooterSaved();
+  }
+
+  // ── Actual finish time entry (temporary prompt — replaced in Step 8) ─────
+
+  function enterActualFinish(legIndex) {
+    const legs = loadRaceLegs();
+    const leg  = legs[legIndex];
+    const current = leg.actualFinish ? ` (current: ${leg.actualFinish})` : '';
+
+    const input = prompt(
+      `Leg ${leg.legNumber} – ${leg.runner}\nEnter finish time (e.g. 3:35 PM), or leave blank to clear:${current}`
+    );
+    if (input === null) return; // cancelled
+
+    const trimmed = input.trim();
+    if (trimmed === '') {
+      leg.actualFinish = null;
+    } else {
+      const normalized = normalizeTimeStr(trimmed);
+      if (!normalized) {
+        alert('Invalid format. Use h:mm AM or h:mm PM  (e.g. 3:35 PM)');
+        return;
+      }
+      leg.actualFinish = normalized;
+    }
+
+    legs[legIndex] = leg;
+    localStorage.setItem('raceLegs', JSON.stringify(legs));
+    fullRender();
+  }
+
   // ── Config panel ─────────────────────────────────────────────────────────
+
   function showConfig() {
     document.getElementById('configPanel').classList.add('visible');
   }
@@ -767,31 +1000,35 @@
 
   function saveConfig() {
     const cfg = loadConfig();
-    cfg.teamName       = document.querySelector('[data-cfg="teamName"]').textContent.trim();
-    cfg.eventName      = document.querySelector('[data-cfg="eventName"]').textContent.trim();
-    cfg.raceStartTime  = document.querySelector('[data-cfg="raceStartTime"]').textContent.trim();
-    cfg.runner1        = document.querySelector('[data-cfg="runner1"]').value;
-    cfg.runner2        = document.querySelector('[data-cfg="runner2"]').value;
-    cfg.runner3        = document.querySelector('[data-cfg="runner3"]').value;
-    cfg.runner4        = document.querySelector('[data-cfg="runner4"]').value;
-    cfg.runner5        = document.querySelector('[data-cfg="runner5"]').value;
-    cfg.runner6        = document.querySelector('[data-cfg="runner6"]').value;
-    cfg.runner7        = document.querySelector('[data-cfg="runner7"]').value;
-    cfg.runner8        = document.querySelector('[data-cfg="runner8"]').value;
-    cfg.greenMiles     = document.querySelector('[data-cfg="greenMiles"]').textContent.trim();
-    cfg.yellowMiles    = document.querySelector('[data-cfg="yellowMiles"]').textContent.trim();
-    cfg.redMiles       = document.querySelector('[data-cfg="redMiles"]').textContent.trim();
-    cfg.avgPace        = document.querySelector('[data-cfg="avgPace"]').textContent.trim();
+    cfg.teamName        = document.querySelector('[data-cfg="teamName"]').textContent.trim();
+    cfg.eventName       = document.querySelector('[data-cfg="eventName"]').textContent.trim();
+    cfg.raceStartTime   = document.querySelector('[data-cfg="raceStartTime"]').textContent.trim();
+    cfg.runner1         = document.querySelector('[data-cfg="runner1"]').value;
+    cfg.runner2         = document.querySelector('[data-cfg="runner2"]').value;
+    cfg.runner3         = document.querySelector('[data-cfg="runner3"]').value;
+    cfg.runner4         = document.querySelector('[data-cfg="runner4"]').value;
+    cfg.runner5         = document.querySelector('[data-cfg="runner5"]').value;
+    cfg.runner6         = document.querySelector('[data-cfg="runner6"]').value;
+    cfg.runner7         = document.querySelector('[data-cfg="runner7"]').value;
+    cfg.runner8         = document.querySelector('[data-cfg="runner8"]').value;
+    cfg.greenMiles      = document.querySelector('[data-cfg="greenMiles"]').textContent.trim();
+    cfg.yellowMiles     = document.querySelector('[data-cfg="yellowMiles"]').textContent.trim();
+    cfg.redMiles        = document.querySelector('[data-cfg="redMiles"]').textContent.trim();
+    cfg.avgPace         = document.querySelector('[data-cfg="avgPace"]').textContent.trim();
     cfg.nightAdjustment = document.querySelector('[data-cfg="nightAdjustment"]').textContent.trim();
-    cfg.nightStart     = document.querySelector('[data-cfg="nightStart"]').textContent.trim();
-    cfg.nightEnd       = document.querySelector('[data-cfg="nightEnd"]').textContent.trim();
+    cfg.nightStart      = document.querySelector('[data-cfg="nightStart"]').textContent.trim();
+    cfg.nightEnd        = document.querySelector('[data-cfg="nightEnd"]').textContent.trim();
     localStorage.setItem('raceConfig', JSON.stringify(cfg));
+    // Rebuild raceLegs with new runner names, preserving actual finish times
+    initRaceLegs(true);
     hideConfig();
-    renderTable();
+    fullRender();
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────
-  renderTable();
+  // Initialize raceLegs if not already in localStorage
+  if (!localStorage.getItem('raceLegs')) initRaceLegs(false);
+  fullRender();
 </script>
 
 </body>
