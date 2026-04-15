@@ -360,7 +360,7 @@
       padding-right: 12px;
     }
 
-    /* Tappable field (all non-runner fields) */
+    /* Tappable field — default width matches one runner column (~half overlay) */
     .cfg-field {
       background: #0a1a2a;
       border: 1px solid #4a9eff;
@@ -370,29 +370,34 @@
       font-family: inherit;
       text-align: right;
       padding: 8px 10px;
-      width: 160px;
+      width: calc(50% - 4px);
       cursor: pointer;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
     }
 
-    /* Wider variant for long text fields */
-    .cfg-field-wide {
-      width: 320px;
+    /* Time fields keep a fixed narrow width */
+    .cfg-field-time {
+      width: 160px;
     }
 
     /* Night hours row — special inline layout */
     .cfg-night-row {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       min-height: 44px;
       padding: 6px 0;
       gap: 10px;
     }
 
-    .cfg-night-row .cfg-label {
-      padding-right: 0;
+    /* Right-side group: pushes fields to the right edge */
+    .cfg-night-fields {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .cfg-night-sep {
@@ -438,21 +443,13 @@
       width: 100%;
     }
 
-    /* Config footer — fixed to bottom of viewport, hidden until panel opens */
+    /* Config action buttons — inside the card, bottom of body */
     .config-footer {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      display: flex;
       align-items: center;
       border-top: 1px solid #333;
-      background: #1a1a1a;
-      z-index: 101;
-    }
-
-    .config-footer.visible {
-      display: flex;
+      border-radius: 0 0 6px 6px;
+      overflow: hidden;
     }
 
     .cfg-footer-btn {
@@ -820,11 +817,11 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Team name</span>
-      <div class="cfg-field cfg-field-wide">Party Pace</div>
+      <div class="cfg-field">Party Pace</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Event name</span>
-      <div class="cfg-field cfg-field-wide">Ragnar Trail Atlanta 2026</div>
+      <div class="cfg-field">Ragnar Trail Atlanta 2026</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Start time</span>
@@ -902,31 +899,32 @@
 
     <div class="cfg-night-row">
       <span class="cfg-label">From</span>
-      <div class="cfg-field">8:00 PM</div>
-      <span class="cfg-night-sep">–</span>
-      <div class="cfg-field">7:00 AM</div>
+      <div class="cfg-night-fields">
+        <div class="cfg-field cfg-field-time">8:00 PM</div>
+        <span class="cfg-night-sep">–</span>
+        <div class="cfg-field cfg-field-time">7:00 AM</div>
+      </div>
     </div>
 
   </div><!-- /.config-body -->
+
+  <!-- Action buttons inside the card -->
+  <footer class="config-footer">
+    <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
+    <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
+    <button class="cfg-footer-btn cfg-btn-save">Save</button>
+  </footer>
+
   </div><!-- /.config-card -->
 
 </div><!-- /.config-panel -->
 
-<!-- Config footer: fixed to viewport bottom, only shown when panel is open -->
-<footer class="config-footer" id="configFooter">
-  <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
-  <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
-  <button class="cfg-footer-btn cfg-btn-save">Save</button>
-</footer>
-
 <script>
   function showConfig() {
     document.getElementById('configPanel').classList.add('visible');
-    document.getElementById('configFooter').classList.add('visible');
   }
   function hideConfig() {
     document.getElementById('configPanel').classList.remove('visible');
-    document.getElementById('configFooter').classList.remove('visible');
   }
 </script>
 
