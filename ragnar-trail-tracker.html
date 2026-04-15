@@ -192,12 +192,12 @@
 
     /* Loop row background colors */
     .row-green  { background: #003300; }
-    .row-yellow { background: #333300; }
+    .row-yellow { background: #444400; }
     .row-red    { background: #330000; }
 
     /* Active leg */
     .row-active {
-      outline: 1px solid #555;
+      outline: 2px solid #888;
       outline-offset: -1px;
       position: relative;
       z-index: 1;
@@ -268,6 +268,203 @@
       font-size: 11px;
       color: #555;
       text-align: center;
+    }
+
+    /* ══════════════════════════════════════════
+       CONFIG PANEL
+    ══════════════════════════════════════════ */
+
+    /* Full-screen shell — same flex column as .app */
+    .config-panel {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d0d0d;
+      color: #ddd;
+    }
+
+    .config-panel.visible {
+      display: flex;
+    }
+
+    /* Config header */
+    .config-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+    }
+
+    .config-header .config-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Config scrollable body */
+    .config-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Section label */
+    .cfg-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #555;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
+    .cfg-section-label:first-child {
+      margin-top: 0;
+    }
+
+    /* Field row: label on left, tappable field on right */
+    .cfg-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .cfg-row:last-child {
+      border-bottom: none;
+    }
+
+    .cfg-label {
+      font-size: 13px;
+      color: #aaa;
+      flex-shrink: 0;
+      padding-right: 12px;
+    }
+
+    /* Tappable field (all non-runner fields) */
+    .cfg-field {
+      background: #0a1a2a;
+      border: 1px solid #4a9eff;
+      border-radius: 3px;
+      color: #ccc;
+      font-size: 13px;
+      font-family: inherit;
+      text-align: right;
+      padding: 8px 10px;
+      width: 160px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Night hours row — special inline layout */
+    .cfg-night-row {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 6px 0;
+      gap: 10px;
+    }
+
+    .cfg-night-row .cfg-label {
+      padding-right: 0;
+    }
+
+    .cfg-night-sep {
+      color: #555;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Runner grid */
+    .cfg-runner-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .cfg-runner-cell {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 8px 10px;
+      min-height: 44px;
+    }
+
+    .cfg-runner-num {
+      font-size: 11px;
+      color: #444;
+      flex-shrink: 0;
+      width: 14px;
+      text-align: right;
+    }
+
+    .cfg-runner-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ccc;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    /* Config footer */
+    .config-footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #333;
+      background: #1a1a1a;
+    }
+
+    .cfg-footer-btn {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 13px;
+      font-family: inherit;
+      border: none;
+      border-right: 1px solid #333;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .cfg-footer-btn:last-child {
+      border-right: none;
+    }
+
+    /* Reset — muted */
+    .cfg-btn-reset {
+      background: #111;
+      color: #888;
+      border-top: 2px solid #444;
+    }
+
+    /* Restore — blue accent */
+    .cfg-btn-restore {
+      background: #0a1525;
+      color: #4a9eff;
+      border-top: 2px solid #4a9eff;
+    }
+
+    /* Save — green accent */
+    .cfg-btn-save {
+      background: #1a3a1a;
+      color: #4caf50;
+      border-top: 2px solid #4caf50;
+    }
+
+    .cfg-footer-btn:active {
+      filter: brightness(1.3);
     }
   </style>
 </head>
@@ -570,9 +767,138 @@
   <footer class="footer">
     <button class="footer-btn">Export</button>
     <div class="footer-saved">Last saved: 2:24 PM</div>
-    <button class="footer-btn">Settings</button>
+    <button class="footer-btn" onclick="showConfig()">Settings</button>
   </footer>
 
 </div><!-- /.app -->
+
+<!-- ══════════════════════════════════════════
+     CONFIG PANEL
+══════════════════════════════════════════ -->
+<div class="config-panel" id="configPanel">
+
+  <!-- Config Header -->
+  <header class="config-header">
+    <div class="config-title">Settings</div>
+    <button class="footer-btn" onclick="hideConfig()">✕ Close</button>
+  </header>
+
+  <!-- Config Body (scrolls) -->
+  <div class="config-body">
+
+    <!-- Race Info -->
+    <div class="cfg-section-label">Race Info</div>
+
+    <div class="cfg-row">
+      <span class="cfg-label">Team name</span>
+      <div class="cfg-field">Party Pace</div>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Event name</span>
+      <div class="cfg-field">Ragnar Trail Atlanta 2026</div>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Start time</span>
+      <div class="cfg-field">8:00 AM</div>
+    </div>
+
+    <!-- Runners -->
+    <div class="cfg-section-label">Runners (in order)</div>
+
+    <div class="cfg-runner-grid">
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">1</span>
+        <input class="cfg-runner-input" type="text" value="Wendy">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">2</span>
+        <input class="cfg-runner-input" type="text" value="Kristine">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">3</span>
+        <input class="cfg-runner-input" type="text" value="Scott">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">4</span>
+        <input class="cfg-runner-input" type="text" value="Jeff">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">5</span>
+        <input class="cfg-runner-input" type="text" value="Jason">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">6</span>
+        <input class="cfg-runner-input" type="text" value="Ray">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">7</span>
+        <input class="cfg-runner-input" type="text" value="Jenny">
+      </div>
+      <div class="cfg-runner-cell">
+        <span class="cfg-runner-num">8</span>
+        <input class="cfg-runner-input" type="text" value="Tim">
+      </div>
+    </div>
+
+    <!-- Loop Distances -->
+    <div class="cfg-section-label">Loop Distances</div>
+
+    <div class="cfg-row">
+      <span class="cfg-label">Green</span>
+      <div class="cfg-field">4.0 mi</div>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Yellow</span>
+      <div class="cfg-field">5.0 mi</div>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Red</span>
+      <div class="cfg-field">6.0 mi</div>
+    </div>
+
+    <!-- Pace Settings -->
+    <div class="cfg-section-label">Pace Settings</div>
+
+    <div class="cfg-row">
+      <span class="cfg-label">Avg pace</span>
+      <div class="cfg-field">12:00 /mi</div>
+    </div>
+    <div class="cfg-row">
+      <span class="cfg-label">Night adjustment</span>
+      <div class="cfg-field">5%</div>
+    </div>
+
+    <!-- Night Hours -->
+    <div class="cfg-section-label">Night Hours</div>
+
+    <div class="cfg-night-row">
+      <span class="cfg-label">From</span>
+      <div class="cfg-field">8:00 PM</div>
+      <span class="cfg-night-sep">–</span>
+      <div class="cfg-field">7:00 AM</div>
+    </div>
+
+  </div><!-- /.config-body -->
+
+  <!-- Config Footer -->
+  <footer class="config-footer">
+    <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
+    <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
+    <button class="cfg-footer-btn cfg-btn-save">Save</button>
+  </footer>
+
+</div><!-- /.config-panel -->
+
+<script>
+  function showConfig() {
+    document.querySelector('.app').style.display = 'none';
+    document.getElementById('configPanel').classList.add('visible');
+  }
+  function hideConfig() {
+    document.getElementById('configPanel').classList.remove('visible');
+    document.querySelector('.app').style.display = 'flex';
+  }
+</script>
+
 </body>
 </html>
