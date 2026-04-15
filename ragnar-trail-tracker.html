@@ -886,6 +886,7 @@
       const night = isNightLeg(startMinutes, nightStartMin, nightEndMin);
       if (night) estDuration *= (1 + nightAdjPct / 100);
 
+
       const estFinishMinutes = startMinutes + estDuration;
 
       // Resolve actual finish to extended time
@@ -1055,7 +1056,53 @@
 
   // ── Config panel ─────────────────────────────────────────────────────────
 
+  // Format helpers for config panel display
+  function formatMiles(val) {
+    return `${parseMiles(val)} mi`;
+  }
+
+  function formatPace(val) {
+    const mins = parsePaceMinutes(val);
+    const whole = Math.floor(mins);
+    const secs  = String(Math.round((mins - whole) * 60)).padStart(2, '0');
+    return `${whole}:${secs} /mi`;
+  }
+
+  function formatAdjustment(val) {
+    if (typeof val === 'string' && val.includes('%')) return val;
+    return `${val}%`;
+  }
+
+  function populateConfigPanel() {
+    const cfg = loadConfig();
+    const set = (key, val) => {
+      const el = document.querySelector(`[data-cfg="${key}"]`);
+      if (!el) return;
+      if (el.tagName === 'INPUT') el.value = val;
+      else el.textContent = val;
+    };
+    set('teamName',        cfg.teamName);
+    set('eventName',       cfg.eventName);
+    set('raceStartTime',   cfg.raceStartTime);
+    set('runner1',         cfg.runner1);
+    set('runner2',         cfg.runner2);
+    set('runner3',         cfg.runner3);
+    set('runner4',         cfg.runner4);
+    set('runner5',         cfg.runner5);
+    set('runner6',         cfg.runner6);
+    set('runner7',         cfg.runner7);
+    set('runner8',         cfg.runner8);
+    set('greenMiles',      formatMiles(cfg.greenMiles));
+    set('yellowMiles',     formatMiles(cfg.yellowMiles));
+    set('redMiles',        formatMiles(cfg.redMiles));
+    set('avgPace',         formatPace(cfg.avgPace));
+    set('nightAdjustment', formatAdjustment(cfg.nightAdjustment));
+    set('nightStart',      cfg.nightStart);
+    set('nightEnd',        cfg.nightEnd);
+  }
+
   function showConfig() {
+    populateConfigPanel();
     document.getElementById('configPanel').classList.add('visible');
   }
 
