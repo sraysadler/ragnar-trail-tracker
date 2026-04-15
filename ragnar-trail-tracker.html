@@ -274,28 +274,42 @@
        CONFIG PANEL
     ══════════════════════════════════════════ */
 
-    /* Full-screen shell — same flex column as .app */
+    /* Overlay backdrop — covers full viewport, scrolls if content is tall */
     .config-panel {
       display: none;
-      flex-direction: column;
-      height: 100vh;
-      background: #0d0d0d;
-      color: #ddd;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 100;
+      overflow-y: auto;
+      padding: 24px 16px 0;
+      align-items: flex-start;
+      justify-content: center;
     }
 
     .config-panel.visible {
       display: flex;
     }
 
+    /* The inner card */
+    .config-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 80px; /* space so content clears the fixed footer */
+    }
+
     /* Config header */
     .config-header {
-      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 10px 16px;
       background: #1a1a1a;
       border-bottom: 1px solid #333;
+      border-radius: 6px 6px 0 0;
     }
 
     .config-header .config-title {
@@ -306,9 +320,8 @@
 
     /* Config scrollable body */
     .config-body {
-      flex: 1;
-      overflow-y: auto;
       padding: 16px;
+      background: #111;
     }
 
     /* Section label */
@@ -360,6 +373,13 @@
       width: 160px;
       cursor: pointer;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Wider variant for long text fields */
+    .cfg-field-wide {
+      width: 320px;
     }
 
     /* Night hours row — special inline layout */
@@ -396,7 +416,7 @@
       background: #2a2a2a;
       border: 1px solid #333;
       border-radius: 3px;
-      padding: 8px 10px;
+      padding: 12px 10px;
       min-height: 44px;
     }
 
@@ -418,13 +438,21 @@
       width: 100%;
     }
 
-    /* Config footer */
+    /* Config footer — fixed to bottom of viewport, hidden until panel opens */
     .config-footer {
-      flex-shrink: 0;
-      display: flex;
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       align-items: center;
       border-top: 1px solid #333;
       background: #1a1a1a;
+      z-index: 101;
+    }
+
+    .config-footer.visible {
+      display: flex;
     }
 
     .cfg-footer-btn {
@@ -776,6 +804,7 @@
      CONFIG PANEL
 ══════════════════════════════════════════ -->
 <div class="config-panel" id="configPanel">
+  <div class="config-card">
 
   <!-- Config Header -->
   <header class="config-header">
@@ -783,7 +812,7 @@
     <button class="footer-btn" onclick="hideConfig()">✕ Close</button>
   </header>
 
-  <!-- Config Body (scrolls) -->
+  <!-- Config Body (scrolls with overlay) -->
   <div class="config-body">
 
     <!-- Race Info -->
@@ -791,11 +820,11 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Team name</span>
-      <div class="cfg-field">Party Pace</div>
+      <div class="cfg-field cfg-field-wide">Party Pace</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Event name</span>
-      <div class="cfg-field">Ragnar Trail Atlanta 2026</div>
+      <div class="cfg-field cfg-field-wide">Ragnar Trail Atlanta 2026</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Start time</span>
@@ -879,24 +908,25 @@
     </div>
 
   </div><!-- /.config-body -->
-
-  <!-- Config Footer -->
-  <footer class="config-footer">
-    <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
-    <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
-    <button class="cfg-footer-btn cfg-btn-save">Save</button>
-  </footer>
+  </div><!-- /.config-card -->
 
 </div><!-- /.config-panel -->
 
+<!-- Config footer: fixed to viewport bottom, only shown when panel is open -->
+<footer class="config-footer" id="configFooter">
+  <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
+  <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
+  <button class="cfg-footer-btn cfg-btn-save">Save</button>
+</footer>
+
 <script>
   function showConfig() {
-    document.querySelector('.app').style.display = 'none';
     document.getElementById('configPanel').classList.add('visible');
+    document.getElementById('configFooter').classList.add('visible');
   }
   function hideConfig() {
     document.getElementById('configPanel').classList.remove('visible');
-    document.querySelector('.app').style.display = 'flex';
+    document.getElementById('configFooter').classList.remove('visible');
   }
 </script>
 
