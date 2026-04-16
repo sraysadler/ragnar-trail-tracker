@@ -539,33 +539,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
     }
 
     .keypad-time-digits {
-      font-size: 42px;
+      font-size: 38px;
       font-weight: 300;
       color: #fff;
       letter-spacing: 2px;
       font-variant-numeric: tabular-nums;
-      min-width: 140px;
       text-align: center;
-    }
-
-    .keypad-ampm {
-      font-size: 18px;
-      font-weight: 600;
-      color: #4a9eff;
-      padding: 6px 10px;
-      border: 1px solid #4a9eff;
-      border-radius: 4px;
-      cursor: pointer;
-      user-select: none;
-      line-height: 1;
-    }
-
-    .keypad-ampm:active {
-      background: #0a1525;
     }
 
     /* Button grid */
@@ -836,7 +818,6 @@
       <div class="keypad-leg-label" id="keypadLegLabel">Leg — / Runner</div>
       <div class="keypad-time-row">
         <div class="keypad-time-digits" id="keypadTimeDigits">--:--</div>
-        <div class="keypad-ampm" id="keypadAmPm" onclick="keypadToggleAmPm()">AM</div>
       </div>
     </div>
 
@@ -851,7 +832,7 @@
       <button class="keypad-btn" onclick="keypadDigit(7)">7</button>
       <button class="keypad-btn" onclick="keypadDigit(8)">8</button>
       <button class="keypad-btn" onclick="keypadDigit(9)">9</button>
-      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM/PM</button>
+      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM</button>
       <button class="keypad-btn" onclick="keypadDigit(0)">0</button>
       <button class="keypad-btn keypad-btn-backspace" onclick="keypadBackspace()">⌫</button>
     </div>
@@ -1229,14 +1210,15 @@
   }
 
   // Format display string from buffer (right-to-left fill, max 4 digits)
-  function keypadFormatDisplay(buf) {
+  function keypadFormatDisplay(buf, ampm) {
     const d = buf;
+    const suffix = ampm ? ` ${ampm}` : '';
     switch (d.length) {
       case 0: return '--:--';
       case 1: return `--:-${d[0]}`;
       case 2: return `--:${d[0]}${d[1]}`;
-      case 3: return ` ${d[0]}:${d[1]}${d[2]}`;
-      case 4: return `${d[0]}${d[1]}:${d[2]}${d[3]}`;
+      case 3: return ` ${d[0]}:${d[1]}${d[2]}${suffix}`;
+      case 4: return `${d[0]}${d[1]}:${d[2]}${d[3]}${suffix}`;
       default: return '--:--';
     }
   }
@@ -1245,12 +1227,11 @@
     const buf  = keypadState.buffer;
     const ampm = keypadState.ampm;
 
-    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf);
-    document.getElementById('keypadAmPm').textContent       = ampm;
+    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf, buf.length >= 3 ? ampm : null);
 
-    // Sync the grid AM/PM button label
+    // Grid AM/PM button always shows the current state
     const gridAmPm = document.querySelector('.keypad-grid .keypad-btn[onclick="keypadToggleAmPm()"]');
-    if (gridAmPm) gridAmPm.textContent = ampm === 'AM' ? 'PM' : 'AM';
+    if (gridAmPm) gridAmPm.textContent = ampm;
 
     // Confirm button label — "Clear" state when buffer is empty and existing value exists
     const legs    = loadRaceLegs();
