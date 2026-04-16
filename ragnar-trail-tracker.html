@@ -2121,6 +2121,9 @@
     cfg.nightStart      = document.querySelector('[data-cfg="nightStart"]').textContent.trim();
     cfg.nightEnd        = document.querySelector('[data-cfg="nightEnd"]').textContent.trim();
     localStorage.setItem('raceConfig', JSON.stringify(cfg));
+    // Update header immediately
+    document.querySelector('.team-name').textContent  = cfg.teamName;
+    document.querySelector('.event-name').textContent = cfg.eventName;
     // Rebuild raceLegs with new runner names, preserving actual finish times
     initRaceLegs(true);
     hideConfig();
@@ -2129,6 +2132,9 @@
 
   // ── Boot ─────────────────────────────────────────────────────────────────
   if (!localStorage.getItem('raceLegs')) initRaceLegs(false);
+  const _bootCfg = loadConfig();
+  document.querySelector('.team-name').textContent  = _bootCfg.teamName;
+  document.querySelector('.event-name').textContent = _bootCfg.eventName;
   fullRender();
   updateCurrentTime();
   setInterval(updateCurrentTime, 60000);
