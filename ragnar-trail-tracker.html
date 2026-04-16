@@ -1447,6 +1447,16 @@
     }
   }
 
+  function formatMilesBuffer(buf) {
+    switch (buf.length) {
+      case 0: return '-.- mi';
+      case 1: return `0.${buf[0]} mi`;
+      case 2: return `${buf[0]}.${buf[1]} mi`;
+      case 3: return `${buf[0]}${buf[1]}.${buf[2]} mi`;
+      default: return '-.- mi';
+    }
+  }
+
   function formatPaceBuffer(buf) {
     switch (buf.length) {
       case 0: return '--:-- /mi';
@@ -1477,16 +1487,25 @@
     } else if (variant === 'numeric') {
       const s = keypadState.bufferStr;
       displayText = s === '' ? `--${unit}` : `${s}${unit}`;
+    } else if (variant === 'miles') {
+      displayText = formatMilesBuffer(buf);
     } else { // pace
       displayText = formatPaceBuffer(buf);
     }
     document.getElementById('keypadTimeDigits').textContent = displayText;
 
-    // Bottom-left grid button label
+    // Bottom-left grid button: hide for miles (no decimal needed), else label per variant
     const specialBtn = document.getElementById('keypadSpecialBtn');
     if (specialBtn) {
-      specialBtn.textContent =
-        variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
+      if (variant === 'miles') {
+        specialBtn.style.visibility = 'hidden';
+        specialBtn.style.pointerEvents = 'none';
+      } else {
+        specialBtn.style.visibility = '';
+        specialBtn.style.pointerEvents = '';
+        specialBtn.textContent =
+          variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
+      }
     }
 
     // Confirm "Clear" state — only for time from table/modal
@@ -1544,6 +1563,9 @@
     if (v === 'time') {
       if (keypadState.buffer.length >= 4) return;
       keypadState.buffer.push(d);
+    } else if (v === 'miles') {
+      if (keypadState.buffer.length >= 3) return;
+      keypadState.buffer.push(d);
     } else if (v === 'numeric') {
       if (keypadState.bufferStr.length >= 5) return;
       keypadState.bufferStr += String(d);
@@ -1600,9 +1622,9 @@
     const displayValue = el ? el.textContent.trim() : '';
 
     const variantMap = {
-      raceStartTime: 'time', greenMiles: 'numeric', yellowMiles: 'numeric',
-      redMiles: 'numeric',   avgPace: 'pace',        nightAdjustment: 'numeric',
-      nightStart: 'time',    nightEnd: 'time',
+      raceStartTime: 'time',  greenMiles: 'miles',   yellowMiles: 'miles',
+      redMiles: 'miles',      avgPace: 'pace',        nightAdjustment: 'numeric',
+      nightStart: 'time',     nightEnd: 'time',
     };
     const unitMap = {
       greenMiles: ' mi', yellowMiles: ' mi', redMiles: ' mi', nightAdjustment: '%',
@@ -1624,6 +1646,15 @@
       const parsed = keypadBufferFromTime(displayValue);
       initBuffer = parsed.buffer;
       initAmPm   = parsed.ampm;
+    } else if (variant === 'miles') {
+      // Parse float → implied-decimal buffer e.g. 4.5 → [4,5], 12.3 → [1,2,3]
+      const val = parseFloat(displayValue);
+      if (!isNaN(val) && val > 0) {
+        const tenths = Math.round(val * 10);
+        if (tenths < 10)        initBuffer = [tenths];           // 0.X
+        else if (tenths < 100)  initBuffer = [Math.floor(tenths/10), tenths%10]; // X.Y
+        else                    initBuffer = [Math.floor(tenths/100), Math.floor((tenths%100)/10), tenths%10]; // XY.Z
+      }
     } else if (variant === 'numeric') {
       initBufferStr = displayValue.replace(/[^\d.]/g, '');
     } else { // pace — parse "MM:SS /mi"
@@ -1707,6 +1738,21 @@
         fullRender();
         if (context === 'modal') refreshRowModal();
       }
+
+    // ── Variant Miles: implied decimal ──────────────────────────────────
+    } else if (variant === 'miles') {
+
+      if (buf.length === 0) { flashKeypadError(); return; }
+      let val;
+      if      (buf.length === 1) val = buf[0] / 10;
+      else if (buf.length === 2) val = buf[0] + buf[1] / 10;
+      else                       val = buf[0] * 10 + buf[1] + buf[2] / 10;
+
+      if (val <= 0 || val > 20) { flashKeypadError(); return; }
+
+      const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
+      if (el) el.textContent = `${val} mi`;
+      document.getElementById('keypadOverlay').classList.remove('visible');
 
     // ── Variant B: Numeric ───────────────────────────────────────────────
     } else if (variant === 'numeric') {
