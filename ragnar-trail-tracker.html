@@ -887,7 +887,7 @@
 
   <!-- ZONE 4: Footer -->
   <footer class="footer">
-    <button class="footer-btn">Export</button>
+    <button class="footer-btn" id="exportBtn" onclick="exportCSV()">Export</button>
     <div class="footer-saved" id="footerSaved">Last saved: —</div>
     <button class="footer-btn" onclick="showConfig()">Settings</button>
   </footer>
@@ -2128,6 +2128,119 @@
     initRaceLegs(true);
     hideConfig();
     fullRender();
+  }
+
+  // ── CSV Export ───────────────────────────────────────────────────────────
+
+  function escapeCSV(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function buildExportFilename() {
+    const now = new Date();
+    const YYYY = now.getFullYear();
+    const MM   = String(now.getMonth() + 1).padStart(2, '0');
+    const DD   = String(now.getDate()).padStart(2, '0');
+    const HH   = String(now.getHours()).padStart(2, '0');
+    const mm   = String(now.getMinutes()).padStart(2, '0');
+    return `ragnar_tracker_${YYYY}${MM}${DD}_${HH}${mm}.csv`;
+  }
+
+  function downloadCSV(csvString) {
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = buildExportFilename();
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function generateCSV() {
+    const cfg  = loadConfig();
+    const legs = calculateLegData();
+
+    const lines = [];
+
+    // ── Section 1: Race Summary ──────────────────────────────────────────
+    const leg24      = legs[legs.length - 1];
+    const allDone    = legs.every(l => l.actualFinish);
+    const raceStatus = allDone ? 'Complete' : 'In Progress';
+    const finishTime = leg24 ? (leg24.actualFinish || leg24.estFinishStr || '') : '';
+
+    let totalDuration = '';
+    if (cfg.raceStartTime && leg24) {
+      const startMin  = timeToMinutes(cfg.raceStartTime);
+      const finishMin = leg24.actualFinishMinutes !== null
+        ? leg24.actualFinishMinutes
+        : leg24.estFinishMinutes;
+      const diffMin   = finishMin - startMin;
+      if (!isNaN(diffMin) && diffMin >= 0) {
+        totalDuration = formatDuration(diffMin);
+      }
+    }
+
+    lines.push('[Race Summary]');
+    lines.push('Team Name,Event,Race Start,Finish Time,Total Duration,Status');
+    lines.push([
+      escapeCSV(cfg.teamName), escapeCSV(cfg.eventName),
+      escapeCSV(cfg.raceStartTime), escapeCSV(finishTime),
+      escapeCSV(totalDuration), escapeCSV(raceStatus)
+    ].join(','));
+
+    lines.push('');
+
+    // ── Section 2: Race Data ─────────────────────────────────────────────
+    lines.push('[Race Data]');
+    lines.push('Leg,Runner,Loop,Loop Miles,Start,Est Finish,Actual Finish,Status,Actual Duration,Actual Pace,Predicted Pace,Est Duration');
+    legs.forEach(leg => {
+      lines.push([
+        escapeCSV(leg.leg),
+        escapeCSV(leg.runner),
+        escapeCSV(leg.loop),
+        escapeCSV(leg.loopMiles),
+        escapeCSV(leg.startTimeStr),
+        escapeCSV(leg.estFinishStr),
+        escapeCSV(leg.actualFinish || ''),
+        escapeCSV(leg.status),
+        escapeCSV(formatDuration(leg.actualDuration)),
+        escapeCSV(formatPaceDisplay(leg.actualPace)),
+        escapeCSV(formatPaceDisplay(leg.predictedPace)),
+        escapeCSV(formatDuration(leg.estDuration))
+      ].join(','));
+    });
+
+    lines.push('');
+
+    // ── Section 3: Config ────────────────────────────────────────────────
+    lines.push('[Config]');
+    lines.push('Team Name,Event Name,Race Start Time,Avg Pace,Green Miles,Yellow Miles,Red Miles,Night Adjustment,Night Adjustment Type,Night Hours Start,Night Hours End');
+    lines.push([
+      escapeCSV(cfg.teamName), escapeCSV(cfg.eventName),
+      escapeCSV(cfg.raceStartTime), escapeCSV(formatPaceDisplay(cfg.avgPace)),
+      escapeCSV(parseFloat(cfg.greenMiles)), escapeCSV(parseFloat(cfg.yellowMiles)),
+      escapeCSV(parseFloat(cfg.redMiles)), escapeCSV(cfg.nightAdjustment),
+      escapeCSV(cfg.nightAdjustmentType || 'percent'),
+      escapeCSV(cfg.nightStart), escapeCSV(cfg.nightEnd)
+    ].join(','));
+
+    return lines.join('\n');
+  }
+
+  function exportCSV() {
+    const csv = generateCSV();
+    downloadCSV(csv);
+    const btn = document.getElementById('exportBtn');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'Exported ✓';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }
   }
 
   // ── Boot ─────────────────────────────────────────────────────────────────
