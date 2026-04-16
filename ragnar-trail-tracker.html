@@ -1498,11 +1498,12 @@
     const specialBtn = document.getElementById('keypadSpecialBtn');
     if (specialBtn) {
       if (variant === 'miles') {
-        specialBtn.style.visibility = 'hidden';
+        specialBtn.textContent    = '';
         specialBtn.style.pointerEvents = 'none';
+        specialBtn.style.color    = 'transparent';
       } else {
-        specialBtn.style.visibility = '';
         specialBtn.style.pointerEvents = '';
+        specialBtn.style.color    = '#4a9eff';
         specialBtn.textContent =
           variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
       }
