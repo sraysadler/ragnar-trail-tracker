@@ -1501,9 +1501,17 @@
         specialBtn.textContent    = '';
         specialBtn.style.pointerEvents = 'none';
         specialBtn.style.color    = 'transparent';
+        specialBtn.style.background = '#1a1a1a';
+        specialBtn.style.outline  = 'none';
+        specialBtn.style.boxShadow = 'none';
+        specialBtn.style.border   = 'none';
+        specialBtn.style.opacity  = '1';
       } else {
         specialBtn.style.pointerEvents = '';
         specialBtn.style.color    = '#4a9eff';
+        specialBtn.style.background = '';
+        specialBtn.style.outline  = '';
+        specialBtn.style.boxShadow = '';
         specialBtn.textContent =
           variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
       }
