@@ -1214,12 +1214,12 @@
     const d = buf;
     const suffix = ampm ? ` ${ampm}` : '';
     switch (d.length) {
-      case 0: return '--:--';
-      case 1: return `--:-${d[0]}`;
-      case 2: return `--:${d[0]}${d[1]}`;
+      case 0: return `--:--${suffix}`;
+      case 1: return `--:-${d[0]}${suffix}`;
+      case 2: return `--:${d[0]}${d[1]}${suffix}`;
       case 3: return ` ${d[0]}:${d[1]}${d[2]}${suffix}`;
       case 4: return `${d[0]}${d[1]}:${d[2]}${d[3]}${suffix}`;
-      default: return '--:--';
+      default: return `--:--${suffix}`;
     }
   }
 
@@ -1227,7 +1227,7 @@
     const buf  = keypadState.buffer;
     const ampm = keypadState.ampm;
 
-    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf, buf.length >= 3 ? ampm : null);
+    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf, ampm);
 
     // Grid AM/PM button always shows static label
 
