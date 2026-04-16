@@ -504,7 +504,7 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.85);
       z-index: 1000;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
     }
 
@@ -515,10 +515,10 @@
     .keypad-card {
       background: #1a1a1a;
       border: 1px solid #333;
-      border-radius: 12px 12px 0 0;
+      border-radius: 12px;
       width: 100%;
-      max-width: 400px;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      max-width: 360px;
+      margin: 16px;
     }
 
     /* Display section */
@@ -1213,7 +1213,7 @@
 
   // ── Keypad time entry ────────────────────────────────────────────────────
 
-  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false };
+  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false, dirty: false };
 
   // Build digit buffer from an existing 'h:mm AM/PM' string
   function keypadBufferFromTime(timeStr) {
@@ -1280,6 +1280,7 @@
     keypadState.buffer       = parsed.buffer;
     keypadState.ampm         = parsed.ampm;
     keypadState.confirmClear = false;
+    keypadState.dirty        = false;
 
     // Update label
     document.getElementById('keypadLegLabel').textContent =
@@ -1290,12 +1291,21 @@
   }
 
   function keypadDigit(d) {
+    // First keystroke clears the pre-populated value
+    if (!keypadState.dirty) {
+      keypadState.buffer = [];
+      keypadState.dirty  = true;
+    }
     if (keypadState.buffer.length >= 4) return;
     keypadState.buffer.push(d);
     keypadRender();
   }
 
   function keypadBackspace() {
+    if (!keypadState.dirty) {
+      keypadState.buffer = [];
+      keypadState.dirty  = true;
+    }
     keypadState.buffer.pop();
     keypadRender();
   }
