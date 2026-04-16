@@ -502,13 +502,25 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: #111;
+      background: rgba(0, 0, 0, 0.82);
       z-index: 900;
-      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .row-modal.visible {
       display: flex;
+    }
+
+    .modal-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      width: calc(100% - 32px);
+      max-width: 440px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .modal-header {
@@ -519,6 +531,7 @@
       padding: 10px 16px;
       background: #1a1a1a;
       border-bottom: 1px solid #333;
+      border-radius: 10px 10px 0 0;
     }
 
     .modal-title {
@@ -530,6 +543,7 @@
     .modal-body {
       flex: 1;
       overflow-y: auto;
+      background: #111;
     }
 
     .modal-field {
@@ -598,6 +612,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       border-top: 1px solid #333;
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
     }
 
     .modal-footer-btn {
@@ -931,18 +947,20 @@
 <!-- ══════════════════════════════════════════
      ROW DETAIL MODAL
 ══════════════════════════════════════════ -->
-<div class="row-modal" id="rowModal">
-  <header class="modal-header">
-    <div class="modal-title" id="modalTitle">Leg 1 — Green</div>
-    <button class="footer-btn" onclick="attemptCloseModal()">✕ Close</button>
-  </header>
-  <div class="modal-body" id="modalBody">
-    <!-- populated by openRowModal() -->
-  </div>
-  <footer class="modal-footer">
-    <button class="modal-footer-btn modal-btn-cancel" onclick="attemptCloseModal()">Cancel</button>
-    <button class="modal-footer-btn modal-btn-save" onclick="saveRowModal()">Save changes</button>
-  </footer>
+<div class="row-modal" id="rowModal" onclick="handleModalBackdropClick(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <header class="modal-header">
+      <div class="modal-title" id="modalTitle">Leg 1 — Green</div>
+      <button class="footer-btn" onclick="attemptCloseModal()">✕ Close</button>
+    </header>
+    <div class="modal-body" id="modalBody">
+      <!-- populated by openRowModal() -->
+    </div>
+    <footer class="modal-footer">
+      <button class="modal-footer-btn modal-btn-cancel" onclick="attemptCloseModal()">Cancel</button>
+      <button class="modal-footer-btn modal-btn-save" onclick="saveRowModal()">Save changes</button>
+    </footer>
+  </div><!-- /.modal-card -->
 </div><!-- /.row-modal -->
 
 <!-- ══════════════════════════════════════════
@@ -1623,6 +1641,10 @@
 
   function openKeypadFromModal() {
     openKeypad(modalState.legIndex, 'modal');
+  }
+
+  function handleModalBackdropClick(event) {
+    if (event.target === document.getElementById('rowModal')) attemptCloseModal();
   }
 
   function attemptCloseModal() {
