@@ -1509,7 +1509,7 @@
     // Bottom-left grid button: hide for miles (no decimal needed), else label per variant
     const specialBtn = document.getElementById('keypadSpecialBtn');
     if (specialBtn) {
-      if (variant === 'miles' || variant === 'percent') {
+      if (variant === 'miles' || variant === 'percent' || variant === 'pace') {
         specialBtn.textContent    = '';
         specialBtn.style.pointerEvents = 'none';
         specialBtn.style.color    = 'transparent';
@@ -1520,17 +1520,6 @@
         specialBtn.style.opacity  = '1';
         specialBtn.style.fontSize = '';
         specialBtn.style.fontWeight = '';
-      } else if (variant === 'pace') {
-        specialBtn.textContent    = ':';
-        specialBtn.style.pointerEvents = 'none';
-        specialBtn.style.color    = '#ddd';
-        specialBtn.style.background = '';
-        specialBtn.style.outline  = '';
-        specialBtn.style.boxShadow = '';
-        specialBtn.style.border   = '';
-        specialBtn.style.opacity  = '1';
-        specialBtn.style.fontSize = '22px';
-        specialBtn.style.fontWeight = '400';
       } else {
         specialBtn.textContent    = variant === 'time' ? 'AM/PM' : '.';
         specialBtn.style.pointerEvents = '';
