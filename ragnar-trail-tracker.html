@@ -380,6 +380,19 @@
       flex-shrink: 0;
     }
 
+    /* Text input variant — editable, full row width */
+    .cfg-field-text {
+      cursor: text;
+      width: calc(100% - 4px);
+      text-align: left;
+      white-space: normal;
+      outline: none;
+    }
+    .cfg-field-text:focus {
+      border-color: #7ab8ff;
+      background: #0d2038;
+    }
+
     /* Time fields keep a fixed narrow width */
     .cfg-field-time {
       width: 160px;
@@ -902,11 +915,11 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Team name</span>
-      <input class="cfg-runner-input" type="text" data-cfg="teamName" value="Party Pace">
+      <input class="cfg-field cfg-field-text" type="text" data-cfg="teamName" value="Party Pace">
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Event name</span>
-      <input class="cfg-runner-input" type="text" data-cfg="eventName" value="Ragnar Trail Atlanta 2026">
+      <input class="cfg-field cfg-field-text" type="text" data-cfg="eventName" value="Ragnar Trail Atlanta 2026">
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Start time</span>
