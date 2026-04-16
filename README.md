@@ -24,10 +24,12 @@ This app replaces the spreadsheet approach with a purpose-built touchscreen inte
 - **Fully offline** — no internet connection required during the race
 - **Single file** — the entire app is one `.html` file, no installation needed
 - **Dark mode** — optimized for night use and battery conservation
-- **Custom time entry keypad** — no system keyboard, large touch targets
-- **Live forecasting** — weighted pace model blends runner history, loop-color averages, and baseline pace
-- **Night pace adjustment** — automatically applies a configurable pace penalty to night legs
+- **Custom time entry keypad** — no system keyboard, large touch targets, calculator-style entry
+- **Live forecasting** — pace model uses each runner's own history, falling back to a configurable baseline
+- **Night pace adjustment** — automatically applies a configurable pace adjustment to legs running between configurable night hours
 - **Three-layer backup** — localStorage auto-save, automatic file backup (Android + Chrome), and manual CSV export
+- **Row detail view** — tap any leg to see full stats including actual pace, predicted pace, and status
+- **Runner substitution** — change the runner for any leg via the detail view
 - **Race Complete state** — triggered automatically when all 24 legs are entered
 
 ---
@@ -35,8 +37,9 @@ This app replaces the spreadsheet approach with a purpose-built touchscreen inte
 ## Tech Stack
 
 - HTML, CSS, JavaScript — no frameworks, no external dependencies
-- Browser localStorage for primary data persistence
-- Chrome File System Access API for automatic background backup (Android only)
+- `localStorage` for primary data persistence
+- `IndexedDB` for File System Access API folder handle storage
+- Chrome File System Access API for automatic background backup (Android + Chrome only)
 
 ---
 
@@ -46,7 +49,7 @@ This app replaces the spreadsheet approach with a purpose-built touchscreen inte
 
 The app is designed to sit at the race campsite handoff area as a shared kiosk. Screen Pinning in Android locks Chrome to the foreground to prevent accidental navigation.
 
-**iOS:** Supported with reduced backup functionality. The File System Access API is not available on iOS. Manual CSV export is the backup strategy on iOS devices.
+**iOS:** Future consideration. The File System Access API is not available on iOS (any browser). Manual CSV export and periodic backup reminders are the fallback strategy on iOS.
 
 ---
 
@@ -61,14 +64,14 @@ The app is designed to sit at the race campsite handoff area as a shared kiosk. 
 6. Place the device at the campsite handoff area
 
 ### During the race
-- Tap the **Actual Finish** cell for any leg to enter a finish time
-- Tap anywhere else on a row to open the full leg detail view
+- Tap the **Actual Finish** cell for any leg to enter a finish time via the custom keypad
+- Tap anywhere else on a row to open the leg detail view — see full stats and change runner if needed
 - All estimates update automatically as times are entered
 - Tap **Export** in the footer at any time for a manual CSV backup
 
 ### After the race
 - Tap **Export** for a final race report CSV
-- The CSV includes the full race data, runner paces, and config settings
+- The CSV includes full race data, runner paces, and config settings
 
 ---
 
@@ -79,12 +82,13 @@ ragnar-trail-tracker/
 ├── ragnar-trail-tracker.html    # The app (single file)
 ├── README.md
 └── docs/
-    ├── App_Plan_v5.md           # Full feature specification
+    ├── App_Plan_v6.md           # Full feature specification
     ├── Wireframes_v1.html       # UI wireframes (open in browser)
     ├── Do_Not_Do_v1.md          # Rejected approaches and why
-    ├── Decisions_Log_v1.md      # Key decisions and reasoning
-    ├── Data_Model_v1.md         # All data fields defined
-    └── Sample_Data_2025.csv     # Real race data for testing
+    ├── Decisions_Log_v2.md      # Key decisions and reasoning
+    ├── Data_Model_v2.md         # All data fields defined
+    ├── Build_Log_v2.md          # Build decisions and current status
+    └── Sample_Data_2025.csv     # Real 2025 race data for testing
 ```
 
 ---
@@ -99,10 +103,25 @@ This app is built specifically for the Ragnar Trail relay format:
 
 ---
 
-## Status
+## Build Status
 
-Currently in development. Planning and documentation complete. Build in progress.
+**Steps 1–13 complete.** Core app is functional — layout, config panel,
+race table, status bar, calculation chain, forecasting logic, time entry
+keypad, and row detail modal are all built and working.
+
+**Currently in progress:**
+- Step 14: Config panel keypad integration (all config fields wired to
+  custom keypads)
+- Step 15: File System Access API automatic backup
+- Step 16: Manual CSV export
+- Step 17: Visual design refinement
+- Step 18: UAT checklist
+- Step 19: On-device testing
+- Step 20: Race day kiosk setup verification
+
+See `docs/Build_Log_v2.md` for full build history and remaining steps.
 
 ---
 
-*Built for Party Pace — Ragnar Trail Atlanta*
+*Built for Party Pace — Ragnar Trail Atlanta 2025*
+*Generalized for use by any Ragnar Trail team*
