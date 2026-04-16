@@ -902,11 +902,11 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Team name</span>
-      <div class="cfg-field" data-cfg="teamName">Party Pace</div>
+      <input class="cfg-runner-input" type="text" data-cfg="teamName" value="Party Pace">
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Event name</span>
-      <div class="cfg-field" data-cfg="eventName">Ragnar Trail Atlanta 2026</div>
+      <input class="cfg-runner-input" type="text" data-cfg="eventName" value="Ragnar Trail Atlanta 2026">
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Start time</span>
@@ -2090,8 +2090,8 @@
 
   function saveConfig() {
     const cfg = loadConfig();
-    cfg.teamName        = document.querySelector('[data-cfg="teamName"]').textContent.trim();
-    cfg.eventName       = document.querySelector('[data-cfg="eventName"]').textContent.trim();
+    cfg.teamName        = document.querySelector('[data-cfg="teamName"]').value.trim();
+    cfg.eventName       = document.querySelector('[data-cfg="eventName"]').value.trim();
     cfg.raceStartTime   = document.querySelector('[data-cfg="raceStartTime"]').textContent.trim();
     cfg.runner1         = document.querySelector('[data-cfg="runner1"]').value;
     cfg.runner2         = document.querySelector('[data-cfg="runner2"]').value;
