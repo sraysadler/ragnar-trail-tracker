@@ -495,6 +495,127 @@
     }
 
     /* ══════════════════════════════════════════
+       ROW DETAIL MODAL
+    ══════════════════════════════════════════ */
+
+    .row-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #111;
+      z-index: 900;
+      flex-direction: column;
+    }
+
+    .row-modal.visible {
+      display: flex;
+    }
+
+    .modal-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .modal-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e1e1e;
+      min-height: 48px;
+    }
+
+    .modal-label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      padding-right: 12px;
+    }
+
+    .modal-value {
+      font-size: 14px;
+      color: #fff;
+      text-align: right;
+    }
+
+    .modal-value-muted   { color: #555; }
+    .modal-value-italic  { font-style: italic; color: #999; }
+    .modal-value-green   { color: #4caf50; }
+    .modal-value-gray    { color: #888; }
+    .modal-value-blue    { color: #4a9eff; }
+
+    /* Actual finish tappable box */
+    .modal-actual-box {
+      background: #0a1a2a;
+      border: 1px solid #4a9eff;
+      border-radius: 3px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+      min-width: 110px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-actual-box.has-actual { color: #fff; }
+    .modal-actual-box.no-actual  { color: #555; font-style: italic; }
+
+    /* Runner dropdown */
+    .modal-runner-select {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 3px;
+      color: #ccc;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 8px 10px;
+      min-width: 130px;
+      cursor: pointer;
+    }
+
+    /* Footer */
+    .modal-footer {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid #333;
+    }
+
+    .modal-footer-btn {
+      background: transparent;
+      border: none;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 600;
+      padding: 16px 0;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .modal-footer-btn:active { filter: brightness(1.3); }
+    .modal-btn-cancel { color: #888; border-right: 1px solid #333; }
+    .modal-btn-save   { color: #4caf50; }
+
+    /* ══════════════════════════════════════════
        KEYPAD OVERLAY
     ══════════════════════════════════════════ */
 
@@ -808,6 +929,23 @@
 </div><!-- /.config-panel -->
 
 <!-- ══════════════════════════════════════════
+     ROW DETAIL MODAL
+══════════════════════════════════════════ -->
+<div class="row-modal" id="rowModal">
+  <header class="modal-header">
+    <div class="modal-title" id="modalTitle">Leg 1 — Green</div>
+    <button class="footer-btn" onclick="attemptCloseModal()">✕ Close</button>
+  </header>
+  <div class="modal-body" id="modalBody">
+    <!-- populated by openRowModal() -->
+  </div>
+  <footer class="modal-footer">
+    <button class="modal-footer-btn modal-btn-cancel" onclick="attemptCloseModal()">Cancel</button>
+    <button class="modal-footer-btn modal-btn-save" onclick="saveRowModal()">Save changes</button>
+  </footer>
+</div><!-- /.row-modal -->
+
+<!-- ══════════════════════════════════════════
      KEYPAD OVERLAY
 ══════════════════════════════════════════ -->
 <div class="keypad-overlay" id="keypadOverlay">
@@ -1094,6 +1232,8 @@
         finishMinutes,
         actualDuration,
         actualPace,
+        predictedPace,
+        estDuration,
         isNight:             night,
         status,
         startTimeStr:        minutesToTime(startMinutes),
@@ -1117,14 +1257,14 @@
         ? 'time-actual' : 'time-estimated';
 
       const actualCell = leg.actualFinish
-        ? `<span class="time-actual" onclick="openKeypad(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
-        : `<span class="time-unstarted" onclick="openKeypad(${i})">—</span>`;
+        ? `<span class="time-actual" onclick="event.stopPropagation();openKeypad(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
+        : `<span class="time-unstarted" onclick="event.stopPropagation();openKeypad(${i})">—</span>`;
 
       const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #888;outline-offset:-1px;position:relative;z-index:1"'
                                   : ' style="background:' + leg.rowColor + '"';
 
       return `
-        <div class="table-row"${activeAttr}>
+        <div class="table-row"${activeAttr} onclick="openRowModal(${i})">
           <div class="td td-num">${leg.leg}</div>
           <div class="td">${leg.runner}</div>
           <div class="td td-loop">${leg.initial}</div>
@@ -1194,7 +1334,7 @@
 
   // ── Keypad time entry ────────────────────────────────────────────────────
 
-  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false, dirty: false };
+  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false, dirty: false, context: 'table' };
 
   // Build digit buffer from an existing 'h:mm AM/PM' string
   function keypadBufferFromTime(timeStr) {
@@ -1247,7 +1387,7 @@
     }
   }
 
-  function openKeypad(legIndex) {
+  function openKeypad(legIndex, context = 'table') {
     const legs = loadRaceLegs();
     const leg  = legs[legIndex];
 
@@ -1260,6 +1400,7 @@
     keypadState.ampm         = parsed.ampm;
     keypadState.confirmClear = false;
     keypadState.dirty        = false;
+    keypadState.context      = context;
 
     // Update label
     document.getElementById('keypadLegLabel').textContent =
@@ -1304,11 +1445,18 @@
 
     // Empty buffer = clear existing actual finish
     if (buf.length === 0) {
+      // Require confirmation when clearing from modal
+      if (keypadState.context === 'modal') {
+        const legs   = loadRaceLegs();
+        const legNum = legs[keypadState.legIndex] && legs[keypadState.legIndex].legNumber;
+        if (!confirm(`Clear finish time for Leg ${legNum}? It will revert to estimated.`)) return;
+      }
       const legs = loadRaceLegs();
       legs[keypadState.legIndex].actualFinish = null;
       localStorage.setItem('raceLegs', JSON.stringify(legs));
       document.getElementById('keypadOverlay').classList.remove('visible');
       fullRender();
+      if (keypadState.context === 'modal') refreshRowModal();
       return;
     }
 
@@ -1349,6 +1497,151 @@
     legs[keypadState.legIndex].actualFinish = timeStr;
     localStorage.setItem('raceLegs', JSON.stringify(legs));
     document.getElementById('keypadOverlay').classList.remove('visible');
+    fullRender();
+    if (keypadState.context === 'modal') refreshRowModal();
+  }
+
+  // ── Duration / pace display helpers ─────────────────────────────────────
+
+  function formatDuration(minutes) {
+    if (minutes === null || minutes === undefined) return '—';
+    const totalSecs = Math.round(minutes * 60);
+    const h = Math.floor(totalSecs / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function formatPaceDisplay(minutesPerMile) {
+    if (minutesPerMile === null || minutesPerMile === undefined) return '—';
+    const whole = Math.floor(minutesPerMile);
+    const secs  = Math.round((minutesPerMile - whole) * 60);
+    return `${whole}:${String(secs).padStart(2, '0')}/mi`;
+  }
+
+  // ── Row Detail Modal ─────────────────────────────────────────────────────
+
+  const modalState = { legIndex: -1, originalRunner: '' };
+
+  function openRowModal(legIndex) {
+    const computed = calculateLegData();
+    const leg      = computed[legIndex];
+    const cfg      = loadConfig();
+
+    modalState.legIndex      = legIndex;
+    modalState.originalRunner = leg.runner;
+
+    // Header title
+    document.getElementById('modalTitle').textContent =
+      `Leg ${leg.leg} \u2014 ${leg.loop}`;
+
+    // Runner dropdown
+    const runners = [
+      cfg.runner1, cfg.runner2, cfg.runner3, cfg.runner4,
+      cfg.runner5, cfg.runner6, cfg.runner7, cfg.runner8,
+    ];
+    const runnerOptions = runners.map(r =>
+      `<option value="${r}"${r === leg.runner ? ' selected' : ''}>${r}</option>`
+    ).join('');
+
+    // Start time style: bold white if this leg or the previous has an actual finish
+    const prevHasActual = legIndex === 0 || (computed[legIndex - 1] && computed[legIndex - 1].actualFinish);
+    const startClass = (leg.actualFinish || prevHasActual) ? 'modal-value' : 'modal-value modal-value-italic';
+
+    // Actual finish box
+    const actualBoxClass = leg.actualFinish ? 'has-actual' : 'no-actual';
+    const actualBoxText  = leg.actualFinish ? leg.actualFinish : leg.estFinishStr;
+
+    // Status colour
+    const statusClass = leg.status === 'Actual'
+      ? 'modal-value modal-value-green'
+      : leg.status.includes('Live') ? 'modal-value modal-value-blue' : 'modal-value modal-value-gray';
+
+    document.getElementById('modalBody').innerHTML = `
+      <div class="modal-field">
+        <span class="modal-label">Runner</span>
+        <select class="modal-runner-select" id="modalRunnerSelect">
+          ${runnerOptions}
+        </select>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Loop miles</span>
+        <span class="modal-value">${leg.loopMiles} mi</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Start</span>
+        <span class="${startClass}">${leg.startTimeStr}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Est finish</span>
+        <span class="modal-value modal-value-italic">${leg.estFinishStr}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Actual finish</span>
+        <div class="modal-actual-box ${actualBoxClass}" onclick="openKeypadFromModal()">${actualBoxText}</div>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Status</span>
+        <span class="${statusClass}">${leg.status}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Actual duration</span>
+        <span class="modal-value ${leg.actualDuration === null ? 'modal-value-muted' : ''}">${formatDuration(leg.actualDuration)}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Actual pace</span>
+        <span class="modal-value ${leg.actualPace === null ? 'modal-value-muted' : ''}">${formatPaceDisplay(leg.actualPace)}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Predicted pace</span>
+        <span class="modal-value">${formatPaceDisplay(leg.predictedPace)}</span>
+      </div>
+      <div class="modal-field">
+        <span class="modal-label">Est duration</span>
+        <span class="modal-value modal-value-italic">${formatDuration(leg.estDuration)}</span>
+      </div>
+    `;
+
+    document.getElementById('rowModal').classList.add('visible');
+  }
+
+  function refreshRowModal() {
+    // Preserve any pending (unsaved) runner change across the refresh
+    const sel           = document.getElementById('modalRunnerSelect');
+    const pendingRunner = sel ? sel.value : null;
+    const origRunner    = modalState.originalRunner;
+
+    openRowModal(modalState.legIndex);
+
+    // Restore dirty state so the unsaved runner change isn't lost
+    modalState.originalRunner = origRunner;
+    if (pendingRunner) {
+      const newSel = document.getElementById('modalRunnerSelect');
+      if (newSel) newSel.value = pendingRunner;
+    }
+  }
+
+  function openKeypadFromModal() {
+    openKeypad(modalState.legIndex, 'modal');
+  }
+
+  function attemptCloseModal() {
+    const sel           = document.getElementById('modalRunnerSelect');
+    const currentRunner = sel ? sel.value : modalState.originalRunner;
+    if (currentRunner !== modalState.originalRunner) {
+      if (!confirm('Close without saving runner change?')) return;
+    }
+    document.getElementById('rowModal').classList.remove('visible');
+  }
+
+  function saveRowModal() {
+    const sel = document.getElementById('modalRunnerSelect');
+    if (sel) {
+      const legs = loadRaceLegs();
+      legs[modalState.legIndex].runner = sel.value;
+      localStorage.setItem('raceLegs', JSON.stringify(legs));
+    }
+    document.getElementById('rowModal').classList.remove('visible');
     fullRender();
   }
 
