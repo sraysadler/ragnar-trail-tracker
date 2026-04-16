@@ -2222,7 +2222,7 @@
     lines.push('Team Name,Event Name,Race Start Time,Avg Pace,Green Miles,Yellow Miles,Red Miles,Night Adjustment,Night Adjustment Type,Night Hours Start,Night Hours End');
     lines.push([
       escapeCSV(cfg.teamName), escapeCSV(cfg.eventName),
-      escapeCSV(cfg.raceStartTime), escapeCSV(formatPaceDisplay(cfg.avgPace)),
+      escapeCSV(cfg.raceStartTime), escapeCSV(formatPaceDisplay(parsePaceMinutes(cfg.avgPace))),
       escapeCSV(parseFloat(cfg.greenMiles)), escapeCSV(parseFloat(cfg.yellowMiles)),
       escapeCSV(parseFloat(cfg.redMiles)), escapeCSV(cfg.nightAdjustment),
       escapeCSV(cfg.nightAdjustmentType || 'percent'),
