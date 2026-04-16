@@ -1416,7 +1416,7 @@
     legIndex: -1, buffer: [], bufferStr: '', ampm: 'AM',
     confirmClear: false, dirty: false,
     context: 'table',       // 'table' | 'modal' | 'config'
-    variant: 'time',        // 'time' | 'numeric' | 'pace'
+    variant: 'time',        // 'time' | 'numeric' | 'pace' | 'miles' | 'percent'
     configField: null, configUnit: '',
   };
 
@@ -1457,6 +1457,16 @@
     }
   }
 
+  function formatPercentBuffer(buf) {
+    switch (buf.length) {
+      case 0: return '--.--%';
+      case 1: return `0.${buf[0]}%`;
+      case 2: return `${buf[0]}.${buf[1]}%`;
+      case 3: return `${buf[0]}${buf[1]}.${buf[2]}%`;
+      default: return '--.--%';
+    }
+  }
+
   function formatPaceBuffer(buf) {
     switch (buf.length) {
       case 0: return '--:-- /mi';
@@ -1489,6 +1499,8 @@
       displayText = s === '' ? `--${unit}` : `${s}${unit}`;
     } else if (variant === 'miles') {
       displayText = formatMilesBuffer(buf);
+    } else if (variant === 'percent') {
+      displayText = formatPercentBuffer(buf);
     } else { // pace
       displayText = formatPaceBuffer(buf);
     }
@@ -1497,7 +1509,7 @@
     // Bottom-left grid button: hide for miles (no decimal needed), else label per variant
     const specialBtn = document.getElementById('keypadSpecialBtn');
     if (specialBtn) {
-      if (variant === 'miles') {
+      if (variant === 'miles' || variant === 'percent') {
         specialBtn.textContent    = '';
         specialBtn.style.pointerEvents = 'none';
         specialBtn.style.color    = 'transparent';
@@ -1506,14 +1518,30 @@
         specialBtn.style.boxShadow = 'none';
         specialBtn.style.border   = 'none';
         specialBtn.style.opacity  = '1';
+        specialBtn.style.fontSize = '';
+        specialBtn.style.fontWeight = '';
+      } else if (variant === 'pace') {
+        specialBtn.textContent    = ':';
+        specialBtn.style.pointerEvents = 'none';
+        specialBtn.style.color    = '#ddd';
+        specialBtn.style.background = '';
+        specialBtn.style.outline  = '';
+        specialBtn.style.boxShadow = '';
+        specialBtn.style.border   = '';
+        specialBtn.style.opacity  = '1';
+        specialBtn.style.fontSize = '22px';
+        specialBtn.style.fontWeight = '400';
       } else {
+        specialBtn.textContent    = variant === 'time' ? 'AM/PM' : '.';
         specialBtn.style.pointerEvents = '';
         specialBtn.style.color    = '#4a9eff';
         specialBtn.style.background = '';
         specialBtn.style.outline  = '';
         specialBtn.style.boxShadow = '';
-        specialBtn.textContent =
-          variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
+        specialBtn.style.border   = '';
+        specialBtn.style.opacity  = '1';
+        specialBtn.style.fontSize = '15px';
+        specialBtn.style.fontWeight = '600';
       }
     }
 
@@ -1572,7 +1600,7 @@
     if (v === 'time') {
       if (keypadState.buffer.length >= 4) return;
       keypadState.buffer.push(d);
-    } else if (v === 'miles') {
+    } else if (v === 'miles' || v === 'percent') {
       if (keypadState.buffer.length >= 3) return;
       keypadState.buffer.push(d);
     } else if (v === 'numeric') {
@@ -1632,7 +1660,7 @@
 
     const variantMap = {
       raceStartTime: 'time',  greenMiles: 'miles',   yellowMiles: 'miles',
-      redMiles: 'miles',      avgPace: 'pace',        nightAdjustment: 'numeric',
+      redMiles: 'miles',      avgPace: 'pace',        nightAdjustment: 'percent',
       nightStart: 'time',     nightEnd: 'time',
     };
     const unitMap = {
@@ -1663,6 +1691,14 @@
         if (tenths < 10)        initBuffer = [tenths];           // 0.X
         else if (tenths < 100)  initBuffer = [Math.floor(tenths/10), tenths%10]; // X.Y
         else                    initBuffer = [Math.floor(tenths/100), Math.floor((tenths%100)/10), tenths%10]; // XY.Z
+      }
+    } else if (variant === 'percent') {
+      const val = parseFloat(displayValue.replace(/[^\d.]/g, ''));
+      if (!isNaN(val) && val >= 0) {
+        const tenths = Math.round(val * 10);
+        if (tenths < 10)       initBuffer = [tenths];
+        else if (tenths < 100) initBuffer = [Math.floor(tenths/10), tenths%10];
+        else                   initBuffer = [Math.floor(tenths/100), Math.floor((tenths%100)/10), tenths%10];
       }
     } else if (variant === 'numeric') {
       initBufferStr = displayValue.replace(/[^\d.]/g, '');
@@ -1761,6 +1797,21 @@
 
       const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
       if (el) el.textContent = `${val} mi`;
+      document.getElementById('keypadOverlay').classList.remove('visible');
+
+    // ── Variant Percent: implied decimal ────────────────────────────────
+    } else if (variant === 'percent') {
+
+      if (buf.length === 0) { flashKeypadError(); return; }
+      let val;
+      if      (buf.length === 1) val = buf[0] / 10;
+      else if (buf.length === 2) val = buf[0] + buf[1] / 10;
+      else                       val = buf[0] * 10 + buf[1] + buf[2] / 10;
+
+      if (val < 0 || val > 50) { flashKeypadError(); return; }
+
+      const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
+      if (el) el.textContent = `${val}%`;
       document.getElementById('keypadOverlay').classList.remove('visible');
 
     // ── Variant B: Numeric ───────────────────────────────────────────────
