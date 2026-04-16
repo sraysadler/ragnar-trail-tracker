@@ -832,7 +832,7 @@
       <button class="keypad-btn" onclick="keypadDigit(7)">7</button>
       <button class="keypad-btn" onclick="keypadDigit(8)">8</button>
       <button class="keypad-btn" onclick="keypadDigit(9)">9</button>
-      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM</button>
+      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM/PM</button>
       <button class="keypad-btn" onclick="keypadDigit(0)">0</button>
       <button class="keypad-btn keypad-btn-backspace" onclick="keypadBackspace()">⌫</button>
     </div>
@@ -1229,9 +1229,7 @@
 
     document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf, buf.length >= 3 ? ampm : null);
 
-    // Grid AM/PM button always shows the current state
-    const gridAmPm = document.querySelector('.keypad-grid .keypad-btn[onclick="keypadToggleAmPm()"]');
-    if (gridAmPm) gridAmPm.textContent = ampm;
+    // Grid AM/PM button always shows static label
 
     // Confirm button label — "Clear" state when buffer is empty and existing value exists
     const legs    = loadRaceLegs();
