@@ -493,6 +493,152 @@
     .cfg-footer-btn:active {
       filter: brightness(1.3);
     }
+
+    /* ══════════════════════════════════════════
+       KEYPAD OVERLAY
+    ══════════════════════════════════════════ */
+
+    .keypad-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .keypad-overlay.visible {
+      display: flex;
+    }
+
+    .keypad-card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px 12px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Display section */
+    .keypad-display {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #2a2a2a;
+      text-align: center;
+    }
+
+    .keypad-leg-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    .keypad-time-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .keypad-time-digits {
+      font-size: 42px;
+      font-weight: 300;
+      color: #fff;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .keypad-ampm {
+      font-size: 18px;
+      font-weight: 600;
+      color: #4a9eff;
+      padding: 6px 10px;
+      border: 1px solid #4a9eff;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1;
+    }
+
+    .keypad-ampm:active {
+      background: #0a1525;
+    }
+
+    /* Button grid */
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: #2a2a2a;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .keypad-btn {
+      background: #1a1a1a;
+      border: none;
+      color: #ddd;
+      font-size: 22px;
+      font-family: inherit;
+      font-weight: 400;
+      padding: 0;
+      height: 64px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .keypad-btn:active {
+      background: #2e2e2e;
+    }
+
+    .keypad-btn-backspace {
+      font-size: 20px;
+      color: #888;
+    }
+
+    /* Action bar */
+    .keypad-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: #2a2a2a;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .keypad-action-btn {
+      background: #1a1a1a;
+      border: none;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 600;
+      padding: 16px 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .keypad-action-btn:active {
+      filter: brightness(1.3);
+    }
+
+    .keypad-btn-cancel {
+      color: #888;
+    }
+
+    .keypad-btn-confirm {
+      color: #4caf50;
+    }
+
+    .keypad-btn-confirm.confirm-clear {
+      color: #ff6b6b;
+    }
   </style>
 </head>
 <body>
@@ -678,6 +824,46 @@
   </div><!-- /.config-card -->
 
 </div><!-- /.config-panel -->
+
+<!-- ══════════════════════════════════════════
+     KEYPAD OVERLAY
+══════════════════════════════════════════ -->
+<div class="keypad-overlay" id="keypadOverlay">
+  <div class="keypad-card">
+
+    <!-- Display -->
+    <div class="keypad-display">
+      <div class="keypad-leg-label" id="keypadLegLabel">Leg — / Runner</div>
+      <div class="keypad-time-row">
+        <div class="keypad-time-digits" id="keypadTimeDigits">--:--</div>
+        <div class="keypad-ampm" id="keypadAmPm" onclick="keypadToggleAmPm()">AM</div>
+      </div>
+    </div>
+
+    <!-- Button grid: 1–9, then AM/PM toggle (hidden — using display area), 0, ⌫ -->
+    <div class="keypad-grid">
+      <button class="keypad-btn" onclick="keypadDigit(1)">1</button>
+      <button class="keypad-btn" onclick="keypadDigit(2)">2</button>
+      <button class="keypad-btn" onclick="keypadDigit(3)">3</button>
+      <button class="keypad-btn" onclick="keypadDigit(4)">4</button>
+      <button class="keypad-btn" onclick="keypadDigit(5)">5</button>
+      <button class="keypad-btn" onclick="keypadDigit(6)">6</button>
+      <button class="keypad-btn" onclick="keypadDigit(7)">7</button>
+      <button class="keypad-btn" onclick="keypadDigit(8)">8</button>
+      <button class="keypad-btn" onclick="keypadDigit(9)">9</button>
+      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM/PM</button>
+      <button class="keypad-btn" onclick="keypadDigit(0)">0</button>
+      <button class="keypad-btn keypad-btn-backspace" onclick="keypadBackspace()">⌫</button>
+    </div>
+
+    <!-- Action bar -->
+    <div class="keypad-actions">
+      <button class="keypad-action-btn keypad-btn-cancel" onclick="keypadCancel()">Cancel</button>
+      <button class="keypad-action-btn keypad-btn-confirm" id="keypadConfirmBtn" onclick="keypadConfirm()">Confirm</button>
+    </div>
+
+  </div>
+</div><!-- /.keypad-overlay -->
 
 <script>
   // ── Leg definitions — fixed, never modified at runtime ──────────────────
@@ -950,8 +1136,8 @@
         ? 'time-actual' : 'time-estimated';
 
       const actualCell = leg.actualFinish
-        ? `<span class="time-actual" onclick="enterActualFinish(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
-        : `<span class="time-unstarted" onclick="enterActualFinish(${i})">—</span>`;
+        ? `<span class="time-actual" onclick="openKeypad(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
+        : `<span class="time-unstarted" onclick="openKeypad(${i})">—</span>`;
 
       const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #888;outline-offset:-1px;position:relative;z-index:1"'
                                   : ' style="background:' + leg.rowColor + '"';
@@ -1025,32 +1211,155 @@
     updateFooterSaved();
   }
 
-  // ── Actual finish time entry (temporary prompt — replaced in Step 8) ─────
+  // ── Keypad time entry ────────────────────────────────────────────────────
 
-  function enterActualFinish(legIndex) {
+  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false };
+
+  // Build digit buffer from an existing 'h:mm AM/PM' string
+  function keypadBufferFromTime(timeStr) {
+    const m = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return { buffer: [], ampm: 'AM' };
+    const h   = parseInt(m[1]);
+    const mm  = m[2];
+    const ampm = m[3].toUpperCase();
+    // Build digits: h may be 1 or 2 digits
+    const hStr = String(h);
+    const digits = [...hStr, mm[0], mm[1]].map(Number);
+    return { buffer: digits, ampm };
+  }
+
+  // Format display string from buffer (right-to-left fill, max 4 digits)
+  function keypadFormatDisplay(buf) {
+    const d = buf;
+    switch (d.length) {
+      case 0: return '--:--';
+      case 1: return `--:-${d[0]}`;
+      case 2: return `--:${d[0]}${d[1]}`;
+      case 3: return ` ${d[0]}:${d[1]}${d[2]}`;
+      case 4: return `${d[0]}${d[1]}:${d[2]}${d[3]}`;
+      default: return '--:--';
+    }
+  }
+
+  function keypadRender() {
+    const buf  = keypadState.buffer;
+    const ampm = keypadState.ampm;
+
+    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf);
+    document.getElementById('keypadAmPm').textContent       = ampm;
+
+    // Sync the grid AM/PM button label
+    const gridAmPm = document.querySelector('.keypad-grid .keypad-btn[onclick="keypadToggleAmPm()"]');
+    if (gridAmPm) gridAmPm.textContent = ampm === 'AM' ? 'PM' : 'AM';
+
+    // Confirm button label — "Clear" state when buffer is empty and existing value exists
+    const legs    = loadRaceLegs();
+    const hasActual = keypadState.legIndex >= 0 && legs[keypadState.legIndex]
+                      && legs[keypadState.legIndex].actualFinish;
+    const confirmBtn = document.getElementById('keypadConfirmBtn');
+    if (buf.length === 0 && hasActual) {
+      keypadState.confirmClear = true;
+      confirmBtn.textContent = 'Clear';
+      confirmBtn.classList.add('confirm-clear');
+    } else {
+      keypadState.confirmClear = false;
+      confirmBtn.textContent = 'Confirm';
+      confirmBtn.classList.remove('confirm-clear');
+    }
+  }
+
+  function openKeypad(legIndex) {
     const legs = loadRaceLegs();
     const leg  = legs[legIndex];
-    const current = leg.actualFinish ? ` (current: ${leg.actualFinish})` : '';
 
-    const input = prompt(
-      `Leg ${leg.legNumber} – ${leg.runner}\nEnter finish time (e.g. 3:35 PM), or leave blank to clear:${current}`
-    );
-    if (input === null) return; // cancelled
+    // Pre-populate: use existing actualFinish, else current device time
+    let initTime = leg.actualFinish || nowToTimeStr();
+    const parsed = keypadBufferFromTime(initTime);
 
-    const trimmed = input.trim();
-    if (trimmed === '') {
-      leg.actualFinish = null;
-    } else {
-      const normalized = normalizeTimeStr(trimmed);
-      if (!normalized) {
-        alert('Invalid format. Use h:mm AM or h:mm PM  (e.g. 3:35 PM)');
-        return;
-      }
-      leg.actualFinish = normalized;
+    keypadState.legIndex     = legIndex;
+    keypadState.buffer       = parsed.buffer;
+    keypadState.ampm         = parsed.ampm;
+    keypadState.confirmClear = false;
+
+    // Update label
+    document.getElementById('keypadLegLabel').textContent =
+      `Leg ${leg.legNumber}  –  ${leg.runner || '?'}`;
+
+    keypadRender();
+    document.getElementById('keypadOverlay').classList.add('visible');
+  }
+
+  function keypadDigit(d) {
+    if (keypadState.buffer.length >= 4) return;
+    keypadState.buffer.push(d);
+    keypadRender();
+  }
+
+  function keypadBackspace() {
+    keypadState.buffer.pop();
+    keypadRender();
+  }
+
+  function keypadToggleAmPm() {
+    keypadState.ampm = keypadState.ampm === 'AM' ? 'PM' : 'AM';
+    keypadRender();
+  }
+
+  function keypadCancel() {
+    document.getElementById('keypadOverlay').classList.remove('visible');
+  }
+
+  function keypadConfirm() {
+    const buf  = keypadState.buffer;
+    const ampm = keypadState.ampm;
+
+    // Empty buffer = clear existing actual finish
+    if (buf.length === 0) {
+      const legs = loadRaceLegs();
+      legs[keypadState.legIndex].actualFinish = null;
+      localStorage.setItem('raceLegs', JSON.stringify(legs));
+      document.getElementById('keypadOverlay').classList.remove('visible');
+      fullRender();
+      return;
     }
 
-    legs[legIndex] = leg;
+    // Parse hour and minutes from buffer
+    let h, mm;
+    if (buf.length === 3) {
+      h  = buf[0];
+      mm = buf[1] * 10 + buf[2];
+    } else if (buf.length === 4) {
+      h  = buf[0] * 10 + buf[1];
+      mm = buf[2] * 10 + buf[3];
+    } else {
+      // Too few digits — flash display to indicate invalid
+      const el = document.getElementById('keypadTimeDigits');
+      el.style.color = '#ff6b6b';
+      setTimeout(() => { el.style.color = ''; }, 600);
+      return;
+    }
+
+    // 24-hour auto-conversion
+    let resolvedAmPm = ampm;
+    if (h > 12) {
+      h -= 12;
+      resolvedAmPm = 'PM';
+    }
+
+    // Validate
+    if (h < 1 || h > 12 || mm < 0 || mm > 59) {
+      const el = document.getElementById('keypadTimeDigits');
+      el.style.color = '#ff6b6b';
+      setTimeout(() => { el.style.color = ''; }, 600);
+      return;
+    }
+
+    const timeStr = `${h}:${String(mm).padStart(2, '0')} ${resolvedAmPm}`;
+
+    const legs = loadRaceLegs();
+    legs[keypadState.legIndex].actualFinish = timeStr;
     localStorage.setItem('raceLegs', JSON.stringify(legs));
+    document.getElementById('keypadOverlay').classList.remove('visible');
     fullRender();
   }
 
