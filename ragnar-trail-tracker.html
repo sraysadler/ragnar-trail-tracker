@@ -593,17 +593,77 @@
     .modal-actual-box.has-actual { color: #fff; }
     .modal-actual-box.no-actual  { color: #555; font-style: italic; }
 
-    /* Runner dropdown */
-    .modal-runner-select {
+    /* Custom runner dropdown */
+    .modal-runner-container {
+      position: relative;
+    }
+
+    .modal-runner-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       background: #2a2a2a;
       border: 1px solid #444;
-      border-radius: 3px;
-      color: #ccc;
-      font-size: 14px;
-      font-family: inherit;
-      padding: 8px 10px;
-      min-width: 130px;
+      border-radius: 6px;
+      padding: 8px 12px;
+      min-width: 140px;
       cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-runner-field:active { background: #333; }
+
+    .modal-runner-name {
+      flex: 1;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .modal-runner-chevron {
+      font-size: 10px;
+      color: #666;
+    }
+
+    .modal-runner-list {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      z-index: 20;
+      min-width: 160px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    }
+
+    .modal-runner-list.open { display: block; }
+
+    .modal-runner-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 14px;
+      background: #111;
+      font-size: 14px;
+      color: #ddd;
+      cursor: pointer;
+      border-bottom: 1px solid #1e1e1e;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .modal-runner-option:last-child { border-bottom: none; }
+    .modal-runner-option:active { background: #1a1a1a; }
+
+    .modal-runner-option.selected { color: #4a9eff; }
+
+    .runner-check {
+      font-size: 13px;
+      color: #4a9eff;
+      width: 16px;
+      text-align: right;
     }
 
     /* Footer */
@@ -1539,27 +1599,33 @@
 
   // ── Row Detail Modal ─────────────────────────────────────────────────────
 
-  const modalState = { legIndex: -1, originalRunner: '' };
+  const modalState = { legIndex: -1, originalRunner: '', currentRunner: '' };
 
   function openRowModal(legIndex) {
     const computed = calculateLegData();
     const leg      = computed[legIndex];
     const cfg      = loadConfig();
 
-    modalState.legIndex      = legIndex;
+    modalState.legIndex       = legIndex;
     modalState.originalRunner = leg.runner;
+    modalState.currentRunner  = leg.runner;
 
     // Header title
     document.getElementById('modalTitle').textContent =
       `Leg ${leg.leg} \u2014 ${leg.loop}`;
 
-    // Runner dropdown
+    // Runner list for custom dropdown
     const runners = [
       cfg.runner1, cfg.runner2, cfg.runner3, cfg.runner4,
       cfg.runner5, cfg.runner6, cfg.runner7, cfg.runner8,
     ];
-    const runnerOptions = runners.map(r =>
-      `<option value="${r}"${r === leg.runner ? ' selected' : ''}>${r}</option>`
+    const runnerOptions = runners.map(r => `
+      <div class="modal-runner-option${r === leg.runner ? ' selected' : ''}"
+           data-runner="${r}"
+           onclick="selectRunner('${r}')">
+        <span>${r}</span>
+        <span class="runner-check">${r === leg.runner ? '✓' : ''}</span>
+      </div>`
     ).join('');
 
     // Start time style: bold white if this leg or the previous has an actual finish
@@ -1578,9 +1644,16 @@
     document.getElementById('modalBody').innerHTML = `
       <div class="modal-field">
         <span class="modal-label">Runner</span>
-        <select class="modal-runner-select" id="modalRunnerSelect">
-          ${runnerOptions}
-        </select>
+        <div class="modal-runner-container">
+          <div class="modal-runner-field"
+               onclick="event.stopPropagation(); toggleRunnerDropdown()">
+            <span class="modal-runner-name" id="runnerSelectedName">${leg.runner}</span>
+            <span class="modal-runner-chevron" id="runnerChevron">▼</span>
+          </div>
+          <div class="modal-runner-list" id="runnerDropdownList">
+            ${runnerOptions}
+          </div>
+        </div>
       </div>
       <div class="modal-field">
         <span class="modal-label">Loop miles</span>
@@ -1625,18 +1698,55 @@
 
   function refreshRowModal() {
     // Preserve any pending (unsaved) runner change across the refresh
-    const sel           = document.getElementById('modalRunnerSelect');
-    const pendingRunner = sel ? sel.value : null;
+    const pendingRunner = modalState.currentRunner;
     const origRunner    = modalState.originalRunner;
 
     openRowModal(modalState.legIndex);
 
     // Restore dirty state so the unsaved runner change isn't lost
     modalState.originalRunner = origRunner;
-    if (pendingRunner) {
-      const newSel = document.getElementById('modalRunnerSelect');
-      if (newSel) newSel.value = pendingRunner;
+    if (pendingRunner && pendingRunner !== modalState.currentRunner) {
+      selectRunner(pendingRunner);
     }
+  }
+
+  function toggleRunnerDropdown() {
+    const list = document.getElementById('runnerDropdownList');
+    if (!list) return;
+    if (list.classList.contains('open')) {
+      closeRunnerDropdown();
+    } else {
+      list.classList.add('open');
+      document.getElementById('runnerChevron').textContent = '▲';
+      // Close when tapping anywhere outside the dropdown
+      setTimeout(() => document.addEventListener('click', _runnerOutsideClick), 0);
+    }
+  }
+
+  function _runnerOutsideClick(e) {
+    const list = document.getElementById('runnerDropdownList');
+    if (list && !list.contains(e.target)) closeRunnerDropdown();
+  }
+
+  function closeRunnerDropdown() {
+    const list = document.getElementById('runnerDropdownList');
+    if (list) list.classList.remove('open');
+    const chevron = document.getElementById('runnerChevron');
+    if (chevron) chevron.textContent = '▼';
+    document.removeEventListener('click', _runnerOutsideClick);
+  }
+
+  function selectRunner(name) {
+    modalState.currentRunner = name;
+    const nameEl = document.getElementById('runnerSelectedName');
+    if (nameEl) nameEl.textContent = name;
+    document.querySelectorAll('.modal-runner-option').forEach(opt => {
+      const isSel = opt.dataset.runner === name;
+      opt.classList.toggle('selected', isSel);
+      const check = opt.querySelector('.runner-check');
+      if (check) check.textContent = isSel ? '✓' : '';
+    });
+    closeRunnerDropdown();
   }
 
   function openKeypadFromModal() {
@@ -1648,21 +1758,17 @@
   }
 
   function attemptCloseModal() {
-    const sel           = document.getElementById('modalRunnerSelect');
-    const currentRunner = sel ? sel.value : modalState.originalRunner;
-    if (currentRunner !== modalState.originalRunner) {
+    closeRunnerDropdown();
+    if (modalState.currentRunner !== modalState.originalRunner) {
       if (!confirm('Close without saving runner change?')) return;
     }
     document.getElementById('rowModal').classList.remove('visible');
   }
 
   function saveRowModal() {
-    const sel = document.getElementById('modalRunnerSelect');
-    if (sel) {
-      const legs = loadRaceLegs();
-      legs[modalState.legIndex].runner = sel.value;
-      localStorage.setItem('raceLegs', JSON.stringify(legs));
-    }
+    const legs = loadRaceLegs();
+    legs[modalState.legIndex].runner = modalState.currentRunner;
+    localStorage.setItem('raceLegs', JSON.stringify(legs));
     document.getElementById('rowModal').classList.remove('visible');
     fullRender();
   }
