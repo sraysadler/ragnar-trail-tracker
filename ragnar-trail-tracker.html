@@ -1603,20 +1603,20 @@
         <span class="${statusClass}">${leg.status}</span>
       </div>
       <div class="modal-field">
-        <span class="modal-label">Actual duration</span>
-        <span class="modal-value ${leg.actualDuration === null ? 'modal-value-muted' : ''}">${formatDuration(leg.actualDuration)}</span>
+        <span class="modal-label">Est duration</span>
+        <span class="modal-value modal-value-italic">${formatDuration(leg.estDuration)}</span>
       </div>
       <div class="modal-field">
-        <span class="modal-label">Actual pace</span>
-        <span class="modal-value ${leg.actualPace === null ? 'modal-value-muted' : ''}">${formatPaceDisplay(leg.actualPace)}</span>
+        <span class="modal-label">Actual duration</span>
+        <span class="modal-value ${leg.actualDuration === null ? 'modal-value-muted' : ''}">${formatDuration(leg.actualDuration)}</span>
       </div>
       <div class="modal-field">
         <span class="modal-label">Predicted pace</span>
         <span class="modal-value">${formatPaceDisplay(leg.predictedPace)}</span>
       </div>
       <div class="modal-field">
-        <span class="modal-label">Est duration</span>
-        <span class="modal-value modal-value-italic">${formatDuration(leg.estDuration)}</span>
+        <span class="modal-label">Actual pace</span>
+        <span class="modal-value ${leg.actualPace === null ? 'modal-value-muted' : ''}">${formatPaceDisplay(leg.actualPace)}</span>
       </div>
     `;
 
