@@ -910,7 +910,7 @@
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Start time</span>
-      <div class="cfg-field" data-cfg="raceStartTime">8:00 AM</div>
+      <div class="cfg-field" data-cfg="raceStartTime" onclick="openCfgKeypad('raceStartTime')">8:00 AM</div>
     </div>
 
     <!-- Runners -->
@@ -956,15 +956,15 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Green</span>
-      <div class="cfg-field" data-cfg="greenMiles">4.0 mi</div>
+      <div class="cfg-field" data-cfg="greenMiles" onclick="openCfgKeypad('greenMiles')">4.0 mi</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Yellow</span>
-      <div class="cfg-field" data-cfg="yellowMiles">5.0 mi</div>
+      <div class="cfg-field" data-cfg="yellowMiles" onclick="openCfgKeypad('yellowMiles')">5.0 mi</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Red</span>
-      <div class="cfg-field" data-cfg="redMiles">6.0 mi</div>
+      <div class="cfg-field" data-cfg="redMiles" onclick="openCfgKeypad('redMiles')">6.0 mi</div>
     </div>
 
     <!-- Pace Settings -->
@@ -972,11 +972,11 @@
 
     <div class="cfg-row">
       <span class="cfg-label">Avg pace</span>
-      <div class="cfg-field" data-cfg="avgPace">12:00 /mi</div>
+      <div class="cfg-field" data-cfg="avgPace" onclick="openCfgKeypad('avgPace')">12:00 /mi</div>
     </div>
     <div class="cfg-row">
       <span class="cfg-label">Night adjustment</span>
-      <div class="cfg-field" data-cfg="nightAdjustment">5%</div>
+      <div class="cfg-field" data-cfg="nightAdjustment" onclick="openCfgKeypad('nightAdjustment')">5%</div>
     </div>
 
     <!-- Night Hours -->
@@ -985,9 +985,9 @@
     <div class="cfg-night-row">
       <span class="cfg-label">From</span>
       <div class="cfg-night-fields">
-        <div class="cfg-field cfg-field-time" data-cfg="nightStart">8:00 PM</div>
+        <div class="cfg-field cfg-field-time" data-cfg="nightStart" onclick="openCfgKeypad('nightStart')">8:00 PM</div>
         <span class="cfg-night-sep">–</span>
-        <div class="cfg-field cfg-field-time" data-cfg="nightEnd">7:00 AM</div>
+        <div class="cfg-field cfg-field-time" data-cfg="nightEnd" onclick="openCfgKeypad('nightEnd')">7:00 AM</div>
       </div>
     </div>
 
@@ -1048,7 +1048,7 @@
       <button class="keypad-btn" onclick="keypadDigit(7)">7</button>
       <button class="keypad-btn" onclick="keypadDigit(8)">8</button>
       <button class="keypad-btn" onclick="keypadDigit(9)">9</button>
-      <button class="keypad-btn" onclick="keypadToggleAmPm()" style="font-size:15px;font-weight:600;color:#4a9eff">AM/PM</button>
+      <button class="keypad-btn" id="keypadSpecialBtn" onclick="keypadSpecialBtn()" style="font-size:15px;font-weight:600;color:#4a9eff">AM/PM</button>
       <button class="keypad-btn" onclick="keypadDigit(0)">0</button>
       <button class="keypad-btn keypad-btn-backspace" onclick="keypadBackspace()">⌫</button>
     </div>
@@ -1412,7 +1412,13 @@
 
   // ── Keypad time entry ────────────────────────────────────────────────────
 
-  const keypadState = { legIndex: -1, buffer: [], ampm: 'AM', confirmClear: false, dirty: false, context: 'table' };
+  const keypadState = {
+    legIndex: -1, buffer: [], bufferStr: '', ampm: 'AM',
+    confirmClear: false, dirty: false,
+    context: 'table',       // 'table' | 'modal' | 'config'
+    variant: 'time',        // 'time' | 'numeric' | 'pace'
+    configField: null, configUnit: '',
+  };
 
   // Build digit buffer from an existing 'h:mm AM/PM' string
   function keypadBufferFromTime(timeStr) {
@@ -1441,28 +1447,64 @@
     }
   }
 
-  function keypadRender() {
-    const buf  = keypadState.buffer;
-    const ampm = keypadState.ampm;
-
-    document.getElementById('keypadTimeDigits').textContent = keypadFormatDisplay(buf, ampm);
-
-    // Grid AM/PM button always shows static label
-
-    // Confirm button label — "Clear" state when buffer is empty and existing value exists
-    const legs    = loadRaceLegs();
-    const hasActual = keypadState.legIndex >= 0 && legs[keypadState.legIndex]
-                      && legs[keypadState.legIndex].actualFinish;
-    const confirmBtn = document.getElementById('keypadConfirmBtn');
-    if (buf.length === 0 && hasActual) {
-      keypadState.confirmClear = true;
-      confirmBtn.textContent = 'Clear';
-      confirmBtn.classList.add('confirm-clear');
-    } else {
-      keypadState.confirmClear = false;
-      confirmBtn.textContent = 'Confirm';
-      confirmBtn.classList.remove('confirm-clear');
+  function formatPaceBuffer(buf) {
+    switch (buf.length) {
+      case 0: return '--:-- /mi';
+      case 1: return `${buf[0]}-:-- /mi`;
+      case 2: return `${buf[0]}${buf[1]}:-- /mi`;
+      case 3: return `${buf[0]}${buf[1]}:${buf[2]}- /mi`;
+      case 4: return `${buf[0]}${buf[1]}:${buf[2]}${buf[3]} /mi`;
+      default: return '--:-- /mi';
     }
+  }
+
+  function flashKeypadError() {
+    const el = document.getElementById('keypadTimeDigits');
+    el.style.color = '#ff6b6b';
+    setTimeout(() => { el.style.color = ''; }, 600);
+  }
+
+  function keypadRender() {
+    const buf     = keypadState.buffer;
+    const ampm    = keypadState.ampm;
+    const variant = keypadState.variant;
+    const unit    = keypadState.configUnit || '';
+
+    // Build display text based on variant
+    let displayText;
+    if (variant === 'time') {
+      displayText = keypadFormatDisplay(buf, ampm);
+    } else if (variant === 'numeric') {
+      const s = keypadState.bufferStr;
+      displayText = s === '' ? `--${unit}` : `${s}${unit}`;
+    } else { // pace
+      displayText = formatPaceBuffer(buf);
+    }
+    document.getElementById('keypadTimeDigits').textContent = displayText;
+
+    // Bottom-left grid button label
+    const specialBtn = document.getElementById('keypadSpecialBtn');
+    if (specialBtn) {
+      specialBtn.textContent =
+        variant === 'time' ? 'AM/PM' : variant === 'numeric' ? '.' : ':';
+    }
+
+    // Confirm "Clear" state — only for time from table/modal
+    const confirmBtn = document.getElementById('keypadConfirmBtn');
+    const isTimeLegCtx = variant === 'time' && keypadState.context !== 'config';
+    if (isTimeLegCtx && buf.length === 0 && keypadState.legIndex >= 0) {
+      const legs = loadRaceLegs();
+      const hasActual = legs[keypadState.legIndex] && legs[keypadState.legIndex].actualFinish;
+      if (hasActual) {
+        keypadState.confirmClear = true;
+        confirmBtn.textContent = 'Clear';
+        confirmBtn.classList.add('confirm-clear');
+        return;
+      }
+    }
+    keypadState.confirmClear = false;
+    confirmBtn.textContent = 'Confirm';
+    confirmBtn.classList.remove('confirm-clear');
   }
 
   function openKeypad(legIndex, context = 'table') {
@@ -1475,10 +1517,14 @@
 
     keypadState.legIndex     = legIndex;
     keypadState.buffer       = parsed.buffer;
+    keypadState.bufferStr    = '';
     keypadState.ampm         = parsed.ampm;
     keypadState.confirmClear = false;
     keypadState.dirty        = false;
     keypadState.context      = context;
+    keypadState.variant      = 'time';
+    keypadState.configField  = null;
+    keypadState.configUnit   = '';
 
     // Update label
     document.getElementById('keypadLegLabel').textContent =
@@ -1489,22 +1535,40 @@
   }
 
   function keypadDigit(d) {
-    // First keystroke clears the pre-populated value
     if (!keypadState.dirty) {
-      keypadState.buffer = [];
-      keypadState.dirty  = true;
+      keypadState.buffer    = [];
+      keypadState.bufferStr = '';
+      keypadState.dirty     = true;
     }
-    if (keypadState.buffer.length >= 4) return;
-    keypadState.buffer.push(d);
+    const v = keypadState.variant;
+    if (v === 'time') {
+      if (keypadState.buffer.length >= 4) return;
+      keypadState.buffer.push(d);
+    } else if (v === 'numeric') {
+      if (keypadState.bufferStr.length >= 5) return;
+      keypadState.bufferStr += String(d);
+    } else { // pace
+      if (keypadState.buffer.length >= 4) return;
+      // Seconds tens digit (index 2) must be 0–5
+      if (keypadState.buffer.length === 2 && d > 5) { flashKeypadError(); return; }
+      keypadState.buffer.push(d);
+    }
     keypadRender();
   }
 
   function keypadBackspace() {
     if (!keypadState.dirty) {
-      keypadState.buffer = [];
-      keypadState.dirty  = true;
+      keypadState.buffer    = [];
+      keypadState.bufferStr = '';
+      keypadState.dirty     = true;
+      keypadRender();
+      return;
     }
-    keypadState.buffer.pop();
+    if (keypadState.variant === 'numeric') {
+      keypadState.bufferStr = keypadState.bufferStr.slice(0, -1);
+    } else {
+      keypadState.buffer.pop();
+    }
     keypadRender();
   }
 
@@ -1513,70 +1577,170 @@
     keypadRender();
   }
 
+  // Bottom-left grid button — dispatches based on current variant
+  function keypadSpecialBtn() {
+    if (keypadState.variant === 'time')    keypadToggleAmPm();
+    else if (keypadState.variant === 'numeric') keypadDecimal();
+    // pace ':' is display-only — no action
+  }
+
+  function keypadDecimal() {
+    if (!keypadState.dirty) { keypadState.bufferStr = ''; keypadState.dirty = true; }
+    if (keypadState.bufferStr.includes('.')) return; // one decimal only
+    if (keypadState.bufferStr.length >= 5) return;
+    if (keypadState.bufferStr === '') keypadState.bufferStr = '0';
+    keypadState.bufferStr += '.';
+    keypadRender();
+  }
+
+  // ── Config keypad entry ──────────────────────────────────────────────────
+
+  function openCfgKeypad(field) {
+    const el = document.querySelector(`[data-cfg="${field}"]`);
+    const displayValue = el ? el.textContent.trim() : '';
+
+    const variantMap = {
+      raceStartTime: 'time', greenMiles: 'numeric', yellowMiles: 'numeric',
+      redMiles: 'numeric',   avgPace: 'pace',        nightAdjustment: 'numeric',
+      nightStart: 'time',    nightEnd: 'time',
+    };
+    const unitMap = {
+      greenMiles: ' mi', yellowMiles: ' mi', redMiles: ' mi', nightAdjustment: '%',
+    };
+    const labelMap = {
+      raceStartTime: 'Race Start Time', greenMiles: 'Green Miles',
+      yellowMiles: 'Yellow Miles',      redMiles: 'Red Miles',
+      avgPace: 'Avg Pace',              nightAdjustment: 'Night Adjustment',
+      nightStart: 'Night Start',        nightEnd: 'Night End',
+    };
+
+    const variant = variantMap[field] || 'time';
+    const unit    = unitMap[field]    || '';
+    const label   = labelMap[field]   || field;
+
+    // Pre-populate from current display value
+    let initBuffer = [], initBufferStr = '', initAmPm = 'AM';
+    if (variant === 'time') {
+      const parsed = keypadBufferFromTime(displayValue);
+      initBuffer = parsed.buffer;
+      initAmPm   = parsed.ampm;
+    } else if (variant === 'numeric') {
+      initBufferStr = displayValue.replace(/[^\d.]/g, '');
+    } else { // pace — parse "MM:SS /mi"
+      const m = displayValue.match(/^(\d+):(\d+)/);
+      if (m) {
+        const mm = m[1].padStart(2, '0');
+        const ss = m[2].padStart(2, '0');
+        initBuffer = [+mm[0], +mm[1], +ss[0], +ss[1]];
+      }
+    }
+
+    keypadState.legIndex     = -1;
+    keypadState.buffer       = initBuffer;
+    keypadState.bufferStr    = initBufferStr;
+    keypadState.ampm         = initAmPm;
+    keypadState.confirmClear = false;
+    keypadState.dirty        = false;
+    keypadState.context      = 'config';
+    keypadState.variant      = variant;
+    keypadState.configField  = field;
+    keypadState.configUnit   = unit;
+
+    document.getElementById('keypadLegLabel').textContent = label;
+    keypadRender();
+    document.getElementById('keypadOverlay').classList.add('visible');
+  }
+
   function keypadCancel() {
     document.getElementById('keypadOverlay').classList.remove('visible');
   }
 
   function keypadConfirm() {
-    const buf  = keypadState.buffer;
-    const ampm = keypadState.ampm;
+    const variant = keypadState.variant;
+    const context = keypadState.context;
+    const buf     = keypadState.buffer;
+    const ampm    = keypadState.ampm;
 
-    // Empty buffer = clear existing actual finish
-    if (buf.length === 0) {
-      // Require confirmation when clearing from modal
-      if (keypadState.context === 'modal') {
-        const legs   = loadRaceLegs();
-        const legNum = legs[keypadState.legIndex] && legs[keypadState.legIndex].legNumber;
-        if (!confirm(`Clear finish time for Leg ${legNum}? It will revert to estimated.`)) return;
+    // ── Variant A: Time ──────────────────────────────────────────────────
+    if (variant === 'time') {
+
+      // Empty buffer — clear actual finish (table/modal only)
+      if (buf.length === 0) {
+        if (context === 'config') return; // no-op for config
+        if (context === 'modal') {
+          const legs   = loadRaceLegs();
+          const legNum = legs[keypadState.legIndex] && legs[keypadState.legIndex].legNumber;
+          if (!confirm(`Clear finish time for Leg ${legNum}? It will revert to estimated.`)) return;
+        }
+        const legs = loadRaceLegs();
+        legs[keypadState.legIndex].actualFinish = null;
+        localStorage.setItem('raceLegs', JSON.stringify(legs));
+        document.getElementById('keypadOverlay').classList.remove('visible');
+        fullRender();
+        if (context === 'modal') refreshRowModal();
+        return;
       }
-      const legs = loadRaceLegs();
-      legs[keypadState.legIndex].actualFinish = null;
-      localStorage.setItem('raceLegs', JSON.stringify(legs));
+
+      // Parse h and mm from buffer
+      let h, mm;
+      if (buf.length === 3) { h = buf[0]; mm = buf[1] * 10 + buf[2]; }
+      else if (buf.length === 4) { h = buf[0] * 10 + buf[1]; mm = buf[2] * 10 + buf[3]; }
+      else { flashKeypadError(); return; }
+
+      // 24-hour auto-conversion
+      let resolvedAmPm = ampm;
+      if (h > 12) { h -= 12; resolvedAmPm = 'PM'; }
+
+      if (h < 1 || h > 12 || mm < 0 || mm > 59) { flashKeypadError(); return; }
+
+      const timeStr = `${h}:${String(mm).padStart(2, '0')} ${resolvedAmPm}`;
+
+      if (context === 'config') {
+        const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
+        if (el) el.textContent = timeStr;
+        document.getElementById('keypadOverlay').classList.remove('visible');
+      } else {
+        const legs = loadRaceLegs();
+        legs[keypadState.legIndex].actualFinish = timeStr;
+        localStorage.setItem('raceLegs', JSON.stringify(legs));
+        document.getElementById('keypadOverlay').classList.remove('visible');
+        fullRender();
+        if (context === 'modal') refreshRowModal();
+      }
+
+    // ── Variant B: Numeric ───────────────────────────────────────────────
+    } else if (variant === 'numeric') {
+
+      const s = keypadState.bufferStr;
+      if (s === '' || s === '.') { flashKeypadError(); return; }
+      const val = parseFloat(s);
+      if (isNaN(val)) { flashKeypadError(); return; }
+
+      const field = keypadState.configField;
+      if (['greenMiles', 'yellowMiles', 'redMiles'].includes(field)) {
+        if (val <= 0 || val > 20) { flashKeypadError(); return; }
+      } else if (field === 'nightAdjustment') {
+        if (val < 0 || val > 50) { flashKeypadError(); return; }
+      }
+
+      const unit = keypadState.configUnit || '';
+      const el   = document.querySelector(`[data-cfg="${field}"]`);
+      if (el) el.textContent = `${val}${unit}`;
       document.getElementById('keypadOverlay').classList.remove('visible');
-      fullRender();
-      if (keypadState.context === 'modal') refreshRowModal();
-      return;
+
+    // ── Variant C: Pace ──────────────────────────────────────────────────
+    } else if (variant === 'pace') {
+
+      if (buf.length < 4) { flashKeypadError(); return; }
+      const mins = buf[0] * 10 + buf[1];
+      const secs = buf[2] * 10 + buf[3];
+      if (secs > 59 || mins < 5 || mins > 30) { flashKeypadError(); return; }
+
+      const displayStr = `${mins}:${String(secs).padStart(2, '0')} /mi`;
+      const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
+      if (el) el.textContent = displayStr;
+      document.getElementById('keypadOverlay').classList.remove('visible');
     }
-
-    // Parse hour and minutes from buffer
-    let h, mm;
-    if (buf.length === 3) {
-      h  = buf[0];
-      mm = buf[1] * 10 + buf[2];
-    } else if (buf.length === 4) {
-      h  = buf[0] * 10 + buf[1];
-      mm = buf[2] * 10 + buf[3];
-    } else {
-      // Too few digits — flash display to indicate invalid
-      const el = document.getElementById('keypadTimeDigits');
-      el.style.color = '#ff6b6b';
-      setTimeout(() => { el.style.color = ''; }, 600);
-      return;
-    }
-
-    // 24-hour auto-conversion
-    let resolvedAmPm = ampm;
-    if (h > 12) {
-      h -= 12;
-      resolvedAmPm = 'PM';
-    }
-
-    // Validate
-    if (h < 1 || h > 12 || mm < 0 || mm > 59) {
-      const el = document.getElementById('keypadTimeDigits');
-      el.style.color = '#ff6b6b';
-      setTimeout(() => { el.style.color = ''; }, 600);
-      return;
-    }
-
-    const timeStr = `${h}:${String(mm).padStart(2, '0')} ${resolvedAmPm}`;
-
-    const legs = loadRaceLegs();
-    legs[keypadState.legIndex].actualFinish = timeStr;
-    localStorage.setItem('raceLegs', JSON.stringify(legs));
-    document.getElementById('keypadOverlay').classList.remove('visible');
-    fullRender();
-    if (keypadState.context === 'modal') refreshRowModal();
   }
 
   // ── Duration / pace display helpers ─────────────────────────────────────
