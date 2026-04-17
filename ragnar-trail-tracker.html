@@ -401,27 +401,44 @@
       width: 160px;
     }
 
-    /* Night hours row — special inline layout */
+    /* Night hours — stacked by default, inline on wider panels */
+    .cfg-night-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
     .cfg-night-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       min-height: 44px;
       padding: 6px 0;
-      gap: 10px;
+      border-bottom: 1px solid #222;
     }
 
-    /* Right-side group: pushes fields to the right edge */
-    .cfg-night-fields {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .cfg-night-row:last-child {
+      border-bottom: none;
     }
 
-    .cfg-night-sep {
-      color: #555;
-      font-size: 14px;
-      flex-shrink: 0;
+    /* On panels wide enough, show both fields on one row */
+    @media (min-width: 400px) {
+      .cfg-night-wrap {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #222;
+      }
+      .cfg-night-row {
+        border-bottom: none;
+        flex: 1;
+        min-height: 44px;
+        padding: 6px 0;
+      }
+      .cfg-night-row + .cfg-night-row {
+        justify-content: flex-end;
+        gap: 8px;
+      }
     }
 
     /* Runner grid */
@@ -1034,11 +1051,13 @@
     <!-- Night Hours -->
     <div class="cfg-section-label">Night Hours</div>
 
-    <div class="cfg-night-row">
-      <span class="cfg-label">From</span>
-      <div class="cfg-night-fields">
+    <div class="cfg-night-wrap">
+      <div class="cfg-night-row">
+        <span class="cfg-label">From</span>
         <div class="cfg-field cfg-field-time" data-cfg="nightStart" onclick="openCfgKeypad('nightStart')">8:00 PM</div>
-        <span class="cfg-night-sep">–</span>
+      </div>
+      <div class="cfg-night-row">
+        <span class="cfg-label">To</span>
         <div class="cfg-field cfg-field-time" data-cfg="nightEnd" onclick="openCfgKeypad('nightEnd')">7:00 AM</div>
       </div>
     </div>
