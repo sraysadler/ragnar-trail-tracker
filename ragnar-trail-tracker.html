@@ -411,11 +411,13 @@
       gap: 6px;
     }
 
-    /* Right-side group: both fields shrink proportionally */
+    /* Right-side group: matches width of other tappable cfg-fields */
     .cfg-night-fields {
       display: flex;
       align-items: center;
       gap: 6px;
+      width: calc(50% - 4px);
+      flex-shrink: 1;
       min-width: 0;
     }
 
