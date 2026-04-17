@@ -2215,6 +2215,14 @@
       restoreFromCSV(text);
       populateConfigPanel();
       console.log('[Restore] Done');
+      // Brief footer confirmation
+      const footerEl = document.getElementById('footerSaved');
+      if (footerEl) {
+        const prev = footerEl.textContent;
+        footerEl.textContent = `Restored from backup: ${latest}`;
+        footerEl.style.color = '#4a9eff';
+        setTimeout(() => { footerEl.textContent = prev; footerEl.style.color = ''; }, 3000);
+      }
     } catch (e) {
       console.error('[Restore] Error during restore:', e);
       alert('Restore failed. See console for details.');
