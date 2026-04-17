@@ -949,7 +949,7 @@
 
   <!-- Config Header -->
   <header class="config-header">
-    <div class="config-title">Settings</div>
+    <div class="config-title" id="configTitle">Settings</div>
     <button class="footer-btn" onclick="hideConfig()">✕ Close</button>
   </header>
 
@@ -2232,6 +2232,10 @@
 
   function showConfig() {
     populateConfigPanel();
+    const cfg = loadConfig();
+    const isFirstLoad = !localStorage.getItem('raceConfig') ||
+      [1,2,3,4,5,6,7,8].every(n => !cfg[`runner${n}`]);
+    document.getElementById('configTitle').textContent = isFirstLoad ? 'Race Setup' : 'Settings';
     document.getElementById('configPanel').classList.add('visible');
   }
 
