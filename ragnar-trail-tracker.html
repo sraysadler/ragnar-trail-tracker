@@ -166,12 +166,16 @@
     }
 
     .table-header .th {
-      padding: 8px 6px;
-      font-size: 11px;
+      padding: 10px 6px;
+      font-size: 10px;
       font-weight: 600;
-      color: #888;
+      color: #777;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+    }
+
+    .table-header {
+      min-height: 36px;
     }
 
     .table-header .th:first-child,
@@ -913,7 +917,10 @@
   <!-- ZONE 4: Footer -->
   <footer class="footer">
     <button class="footer-btn" id="exportBtn" onclick="exportCSV()">Export</button>
-    <div class="footer-saved" id="footerSaved">Last saved: —</div><span id="backupDot" style="display:none;margin-left:4px">●</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <span id="backupDot" style="display:none;color:#4caf50;font-size:10px;line-height:1">●</span>
+      <div class="footer-saved" id="footerSaved">Last saved: —</div>
+    </div>
     <button class="footer-btn" onclick="showConfig()">Settings</button>
   </footer>
 
@@ -1394,7 +1401,7 @@
         ? `<span class="time-actual" onclick="event.stopPropagation();openKeypad(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
         : `<span class="time-unstarted" onclick="event.stopPropagation();openKeypad(${i})">—</span>`;
 
-      const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #888;outline-offset:-1px;position:relative;z-index:1"'
+      const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #fff;outline-offset:-1px;position:relative;z-index:1"'
                                   : ' style="background:' + leg.rowColor + '"';
 
       return `
