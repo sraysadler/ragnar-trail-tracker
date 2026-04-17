@@ -2632,6 +2632,11 @@
   updateCurrentTime();
   setInterval(updateCurrentTime, 60000);
 
+  // First-load detection: if no runner names set, open Settings immediately
+  const _isFirstLoad = !localStorage.getItem('raceConfig') ||
+    [1,2,3,4,5,6,7,8].every(n => !_bootCfg[`runner${n}`]);
+  if (_isFirstLoad) showConfig();
+
   // Backup init
   (async () => {
     if ('showDirectoryPicker' in window) {
