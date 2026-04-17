@@ -1065,8 +1065,8 @@
 
   <!-- Action buttons inside the card -->
   <footer class="config-footer">
-    <button class="cfg-footer-btn cfg-btn-reset">Reset</button>
-    <button class="cfg-footer-btn cfg-btn-restore">Restore</button>
+    <button class="cfg-footer-btn cfg-btn-reset" onclick="resetConfigPanel()">Reset</button>
+    <button class="cfg-footer-btn cfg-btn-restore" onclick="restoreConfigFromBackup()">Restore</button>
     <button class="cfg-footer-btn cfg-btn-save" onclick="saveConfig()">Save</button>
   </footer>
 
@@ -2149,6 +2149,76 @@
     set('nightAdjustment', formatAdjustment(cfg.nightAdjustment));
     set('nightStart',      cfg.nightStart);
     set('nightEnd',        cfg.nightEnd);
+  }
+
+  function resetConfigPanel() {
+    if (!confirm('Reset all settings to defaults? Are you sure?')) return;
+    const d = DEFAULT_CONFIG;
+    const set = (key, val) => {
+      const el = document.querySelector(`[data-cfg="${key}"]`);
+      if (!el) return;
+      if (el.tagName === 'INPUT') el.value = val;
+      else el.textContent = val;
+    };
+    set('teamName',        d.teamName);
+    set('eventName',       d.eventName);
+    set('raceStartTime',   d.raceStartTime);
+    set('runner1',         d.runner1);
+    set('runner2',         d.runner2);
+    set('runner3',         d.runner3);
+    set('runner4',         d.runner4);
+    set('runner5',         d.runner5);
+    set('runner6',         d.runner6);
+    set('runner7',         d.runner7);
+    set('runner8',         d.runner8);
+    set('greenMiles',      formatMiles(d.greenMiles));
+    set('yellowMiles',     formatMiles(d.yellowMiles));
+    set('redMiles',        formatMiles(d.redMiles));
+    set('avgPace',         formatPace(d.avgPace));
+    set('nightAdjustment', formatAdjustment(d.nightAdjustment));
+    set('nightStart',      d.nightStart);
+    set('nightEnd',        d.nightEnd);
+  }
+
+  async function restoreConfigFromBackup() {
+    console.log('[Restore] Button tapped');
+    const handle = await getFolderHandle().catch(e => { console.error('[Restore] getFolderHandle error:', e); return null; });
+    console.log('[Restore] folder handle:', handle);
+    if (!handle) { console.log('[Restore] No folder handle found — backup not configured'); alert('No backup folder configured.'); return; }
+
+    const hasPermission = await verifyFolderPermission(handle).catch(e => { console.error('[Restore] verifyFolderPermission error:', e); return false; });
+    console.log('[Restore] hasPermission:', hasPermission);
+    if (!hasPermission) { alert('Backup folder permission denied.'); return; }
+
+    try {
+      const files = [];
+      console.log('[Restore] Scanning folder entries...');
+      for await (const [name, entry] of handle.entries()) {
+        console.log('[Restore] Entry:', name, entry.kind);
+        if (entry.kind === 'file' && name.match(/^ragnar_tracker_\d{8}_\d{4}\.csv$/)) {
+          files.push(name);
+        }
+      }
+      console.log('[Restore] Matching backup files:', files);
+      if (files.length === 0) { alert('No backup files found in the configured folder.'); return; }
+
+      files.sort().reverse();
+      const latest = files[0];
+      console.log('[Restore] Most recent backup:', latest);
+
+      if (!confirm(`Restore from backup?\n${latest}\n\nThis will overwrite current settings in the panel.`)) return;
+
+      const fileHandle = await handle.getFileHandle(latest);
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      console.log('[Restore] CSV loaded, length:', text.length);
+      restoreFromCSV(text);
+      populateConfigPanel();
+      console.log('[Restore] Done');
+    } catch (e) {
+      console.error('[Restore] Error during restore:', e);
+      alert('Restore failed. See console for details.');
+    }
   }
 
   function showConfig() {
