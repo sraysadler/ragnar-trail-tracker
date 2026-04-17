@@ -1401,7 +1401,7 @@
         ? `<span class="time-actual" onclick="event.stopPropagation();openKeypad(${i})" style="cursor:pointer">${leg.actualFinish}</span>`
         : `<span class="time-unstarted" onclick="event.stopPropagation();openKeypad(${i})">—</span>`;
 
-      const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #fff;outline-offset:-1px;position:relative;z-index:1"'
+      const activeAttr = isActive ? ' style="background:' + leg.rowColor + ';outline:2px solid #888;outline-offset:-1px;position:relative;z-index:1"'
                                   : ' style="background:' + leg.rowColor + '"';
 
       return `
