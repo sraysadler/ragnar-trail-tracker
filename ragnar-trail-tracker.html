@@ -1468,7 +1468,9 @@
     const legs = LEG_DEFINITIONS.map((def, i) => ({
       legNumber:     def.leg,
       loop:          def.loop,
-      runner:        runners[(def.leg - 1) % 8] || '',
+      runner:        (preserveActuals && existing[i] && existing[i].runner != null)
+                       ? existing[i].runner
+                       : runners[(def.leg - 1) % 8] || '',
       actualFinish:  (existing[i] && existing[i].actualFinish)  || null,
       overrideMiles: (existing[i] && existing[i].overrideMiles != null)
                        ? existing[i].overrideMiles : null,
