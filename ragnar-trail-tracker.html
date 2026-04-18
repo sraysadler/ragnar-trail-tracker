@@ -2683,11 +2683,11 @@
     const configPace = parsePaceMinutes(cfg.avgPace);
     const loopColors = { Green: '#1a6b1a', Yellow: '#6b6b00', Red: '#6b1a1a' };
 
-    // Group legs by runner slot (runners 1–8, each has 3 legs at positions r-1, r+7, r+15)
+    // Group legs by current assigned runner (leg.runner), not by default slot
     const runnerSlots = [];
     for (let r = 1; r <= 8; r++) {
-      const name     = cfg[`runner${r}`] || `Runner ${r}`;
-      const runnerLegs = [legs[r-1], legs[r+7], legs[r+15]].filter(Boolean);
+      const name       = cfg[`runner${r}`] || `Runner ${r}`;
+      const runnerLegs = legs.filter(l => l.runner === name);
       runnerSlots.push({ name, runnerLegs });
     }
 
@@ -2712,7 +2712,7 @@
       }
 
       const summaryClass = hasHistory ? '' : ' baseline';
-      const summaryText  = `${numComplete} of 3 complete · avg ${avgPaceStr}`;
+      const summaryText  = `${numComplete} of ${runnerLegs.length} complete · avg ${avgPaceStr}`;
 
       const legRows = runnerLegs.map(leg => {
         const done     = !!leg.actualFinish;
