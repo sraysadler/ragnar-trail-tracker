@@ -952,14 +952,22 @@
       white-space: nowrap;
     }
 
+    .rs-cell-pace {
+      font-size: 9px;
+      padding: 5px 2px 5px 8px;
+      white-space: nowrap;
+    }
+
     .rs-leg-row.rs-completed .rs-cell,
-    .rs-leg-row.rs-completed .rs-cell-dur {
+    .rs-leg-row.rs-completed .rs-cell-dur,
+    .rs-leg-row.rs-completed .rs-cell-pace {
       color: #fff;
       font-weight: 700;
     }
 
     .rs-leg-row.rs-unstarted .rs-cell,
-    .rs-leg-row.rs-unstarted .rs-cell-dur {
+    .rs-leg-row.rs-unstarted .rs-cell-dur,
+    .rs-leg-row.rs-unstarted .rs-cell-pace {
       color: #999;
       font-style: italic;
     }
@@ -2103,11 +2111,9 @@
 
   function formatDuration(minutes) {
     if (minutes === null || minutes === undefined) return '—';
-    const totalSecs = Math.round(minutes * 60);
-    const h = Math.floor(totalSecs / 3600);
-    const m = Math.floor((totalSecs % 3600) / 60);
-    const s = totalSecs % 60;
-    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return `${h}:${String(m).padStart(2, '0')}`;
   }
 
   function formatPaceDisplay(minutesPerMile) {
@@ -2636,12 +2642,12 @@
         return `<div class="rs-leg-row ${rowClass}">
           <div class="rs-color-bar" style="background:${barColor}"></div>
           <div></div>
-          <div class="rs-cell">${leg.legNumber}</div>
+          <div class="rs-cell">${leg.leg}</div>
           <div class="rs-cell">${leg.loop}</div>
           <div class="rs-cell">${leg.startTimeStr}</div>
           <div class="rs-cell">${finish}</div>
           <div class="rs-cell-dur">${dur}</div>
-          <div class="rs-cell-dur">${pace}</div>
+          <div class="rs-cell-pace">${pace}</div>
         </div>`;
       }).join('');
 
