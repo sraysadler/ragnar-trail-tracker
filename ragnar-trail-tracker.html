@@ -945,28 +945,24 @@
       overflow: visible;
     }
 
-    /* Duration and pace cells: slightly smaller to prevent overflow */
-    .rs-cell-dur {
-      font-size: 9px;
-      padding: 5px 2px;
-      white-space: nowrap;
-    }
-
-    .rs-cell-pace {
-      font-size: 9px;
-      padding: 5px 2px;
-      white-space: nowrap;
-    }
-
-    /* Give Dur and Pace columns consistent left padding so headers and values align */
-    .rs-col-header span:nth-child(7),
-    .rs-col-header span:nth-child(8) {
-      padding-left: 6px;
-    }
-
+    /* Duration and pace cells — right-aligned, consistent with headers */
     .rs-cell-dur,
-    .rs-cell-pace {
-      padding-left: 6px;
+    .rs-cell-pace,
+    .rs-hdr-dur,
+    .rs-hdr-pace {
+      font-size: 9px;
+      padding: 5px 4px;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .rs-hdr-dur,
+    .rs-hdr-pace {
+      font-size: 6px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 4px;
     }
 
     .rs-leg-row.rs-completed .rs-cell,
@@ -2619,7 +2615,7 @@
       <div class="rs-col-header">
         <span></span><span></span>
         <span>Leg</span><span>Loop</span><span>Start</span>
-        <span>Finish</span><span>Dur</span><span>Pace</span>
+        <span>Finish</span><span class="rs-hdr-dur">Dur</span><span class="rs-hdr-pace">Pace</span>
       </div>`;
 
     const sectionsHtml = runnerSlots.map(({ name, runnerLegs }) => {
