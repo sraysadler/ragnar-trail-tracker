@@ -2,6 +2,8 @@
 
 A touchscreen kiosk app for tracking Ragnar Trail relay races in real time. Runs offline as a single HTML file on any Android device.
 
+**Live app:** https://sraysadler.github.io/ragnar-trail-tracker/ragnar-trail-tracker.html
+
 ---
 
 ## What It Does
@@ -25,11 +27,13 @@ This app replaces the spreadsheet approach with a purpose-built touchscreen inte
 - **Single file** — the entire app is one `.html` file, no installation needed
 - **Dark mode** — optimized for night use and battery conservation
 - **Custom time entry keypad** — no system keyboard, large touch targets, calculator-style entry
-- **Live forecasting** — pace model uses each runner's own history, falling back to a configurable baseline
-- **Night pace adjustment** — automatically applies a configurable pace adjustment to legs running between configurable night hours
-- **Three-layer backup** — localStorage auto-save, automatic file backup (Android + Chrome), and manual CSV export
-- **Row detail view** — tap any leg to see full stats including actual pace, predicted pace, and status
-- **Runner substitution** — change the runner for any leg via the detail view
+- **Live forecasting** — pace model uses each runner's own pace history with night pace normalization
+- **Night pace adjustment** — configurable pace penalty for legs running during night hours
+- **Three-layer backup** — localStorage auto-save, automatic file backup (Android + Chrome), and manual CSV export in Settings
+- **Row detail view** — tap any leg to see full stats, edit actual finish, change runner, or override loop miles
+- **Runner Stats** — per-runner pace history and team totals, accessible from the footer
+- **Loop miles override** — correct per-leg distances when a runner covers unexpected mileage
+- **Runner substitution** — change the runner for any leg; all stats and forecasts follow the current assignment
 - **Race Complete state** — triggered automatically when all 24 legs are entered
 
 ---
@@ -49,28 +53,27 @@ This app replaces the spreadsheet approach with a purpose-built touchscreen inte
 
 The app is designed to sit at the race campsite handoff area as a shared kiosk. Screen Pinning in Android locks Chrome to the foreground to prevent accidental navigation.
 
-**iOS:** Future consideration. The File System Access API is not available on iOS (any browser). Manual CSV export and periodic backup reminders are the fallback strategy on iOS.
+**iOS:** Future consideration. The File System Access API is not available on iOS (any browser). Manual CSV export is the backup strategy on iOS.
 
 ---
 
 ## How to Use
 
 ### Before the race
-1. Download `ragnar-trail-tracker.html` to your device
-2. Open the file in Chrome
-3. Tap **Settings** and fill in your team name, event name, runner names in order, race start time, and loop distances
-4. Grant the one-time file backup permission when prompted
-5. Enable Android Screen Pinning
-6. Place the device at the campsite handoff area
+1. Open the app URL in Chrome on your device
+2. When "Race Setup" opens automatically, fill in your team name, event name, runner names in order, race start time, and loop distances
+3. Grant the one-time file backup permission when prompted
+4. Enable Android Screen Pinning
+5. Place the device at the campsite handoff area
 
 ### During the race
 - Tap the **Actual Finish** cell for any leg to enter a finish time via the custom keypad
-- Tap anywhere else on a row to open the leg detail view — see full stats and change runner if needed
+- Tap anywhere else on a row to open the leg detail view — see full stats, edit runner, or override loop miles if needed
+- Tap **Runner Stats** in the footer to see per-runner pace history and team totals
 - All estimates update automatically as times are entered
-- Tap **Export** in the footer at any time for a manual CSV backup
 
 ### After the race
-- Tap **Export** for a final race report CSV
+- Open **Settings** and tap **Export CSV** for a final race report
 - The CSV includes full race data, runner paces, and config settings
 
 ---
@@ -82,13 +85,15 @@ ragnar-trail-tracker/
 ├── ragnar-trail-tracker.html    # The app (single file)
 ├── README.md
 └── docs/
-    ├── App_Plan_v6.md           # Full feature specification
-    ├── Wireframes_v1.html       # UI wireframes (open in browser)
-    ├── Do_Not_Do_v1.md          # Rejected approaches and why
-    ├── Decisions_Log_v2.md      # Key decisions and reasoning
-    ├── Data_Model_v2.md         # All data fields defined
-    ├── Build_Log_v2.md          # Build decisions and current status
-    └── Sample_Data_2025.csv     # Real 2025 race data for testing
+    ├── App_Plan_v7.md                  # Full feature specification
+    ├── Race_Tracker_Wireframes_v3.html # UI wireframes (open in browser)
+    ├── Race_Tracker_Do_Not_Do_v1.md    # Rejected approaches and why
+    ├── Race_Tracker_Decisions_Log_v3.md # Key decisions and reasoning
+    ├── Race_Tracker_Data_Model_v3.md   # All data fields defined
+    ├── Race_Tracker_Build_Log_v3.md    # Build history and current status
+    ├── Race_Tracker_UAT_Checklist_v2.md # Test plan
+    ├── Race_Tracker_Sample_Data_2025.csv # Real 2025 race data for testing
+    └── build-briefs/                   # Per-step build task briefs
 ```
 
 ---
@@ -105,21 +110,26 @@ This app is built specifically for the Ragnar Trail relay format:
 
 ## Build Status
 
-**Steps 1–13 complete.** Core app is functional — layout, config panel,
-race table, status bar, calculation chain, forecasting logic, time entry
-keypad, and row detail modal are all built and working.
+**Steps 1–25 complete.** The app is fully functional and has been tested on the target Android device.
 
-**Currently in progress:**
-- Step 14: Config panel keypad integration (all config fields wired to
-  custom keypads)
-- Step 15: File System Access API automatic backup
-- Step 16: Manual CSV export
-- Step 17: Visual design refinement
-- Step 18: UAT checklist
-- Step 19: On-device testing
-- Step 20: Race day kiosk setup verification
+**Completed features:**
+- Layout, config panel, race table, status bar, calculation chain
+- Forecasting with pace-based night adjustment and normalization
+- Time entry keypad (all variants)
+- Row Detail Modal with loop miles override
+- Runner substitution
+- Runner Stats modal with Team Totals
+- localStorage auto-save and restore
+- File System Access API automatic backup
+- Manual CSV export (in Settings panel)
+- Visual design refinement
+- Fresh load / Race Setup experience
 
-See `docs/Build_Log_v2.md` for full build history and remaining steps.
+**Remaining:**
+- UAT testing (checklist in docs/)
+- Race day kiosk setup verification
+
+See `docs/Race_Tracker_Build_Log_v3.md` for full build history.
 
 ---
 
