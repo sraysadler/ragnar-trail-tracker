@@ -913,7 +913,7 @@
     .rs-col-header,
     .rs-leg-row {
       display: grid;
-      grid-template-columns: 8px 4px 26px 44px 1fr 1fr 34px 52px;
+      grid-template-columns: 8px 4px 26px 44px 1fr 1fr 44px 72px;
       align-items: center;
     }
 
@@ -946,35 +946,23 @@
       text-overflow: ellipsis;
     }
 
-    /* Duration and pace cells — left-aligned, consistent with headers */
-    .rs-cell-dur,
-    .rs-cell-pace {
-      font-size: 9px;
-      padding: 5px 4px;
-      white-space: nowrap;
-      text-align: left;
-    }
-
+    /* dur/pace headers — same padding as all other header spans */
     .rs-hdr-dur,
     .rs-hdr-pace {
       font-size: 6px;
       color: #555;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 3px 4px;
+      padding: 0 2px;
       text-align: left;
     }
 
-    .rs-leg-row.rs-completed .rs-cell,
-    .rs-leg-row.rs-completed .rs-cell-dur,
-    .rs-leg-row.rs-completed .rs-cell-pace {
+    .rs-leg-row.rs-completed .rs-cell {
       color: #fff;
       font-weight: 700;
     }
 
-    .rs-leg-row.rs-unstarted .rs-cell,
-    .rs-leg-row.rs-unstarted .rs-cell-dur,
-    .rs-leg-row.rs-unstarted .rs-cell-pace {
+    .rs-leg-row.rs-unstarted .rs-cell {
       color: #999;
       font-style: italic;
     }
@@ -2653,8 +2641,8 @@
           <div class="rs-cell">${leg.loop}</div>
           <div class="rs-cell">${leg.startTimeStr}</div>
           <div class="rs-cell">${finish}</div>
-          <div class="rs-cell-dur">${dur}</div>
-          <div class="rs-cell-pace">${pace}</div>
+          <div class="rs-cell">${dur}</div>
+          <div class="rs-cell">${pace}</div>
         </div>`;
       }).join('');
 
