@@ -601,6 +601,19 @@
     .modal-value-gray    { color: #888; }
     .modal-value-blue    { color: #4a9eff; }
 
+    /* Loop miles override field */
+    .modal-miles-field {
+      border: 1px dotted #555;
+      border-radius: 3px;
+      padding: 3px 6px;
+      cursor: default;
+      user-select: none;
+    }
+    .modal-miles-field.holding {
+      border-color: #4a9eff;
+      color: #4a9eff;
+    }
+
     /* Actual finish tappable box */
     .modal-actual-box {
       background: #0a1a2a;
@@ -1453,10 +1466,12 @@
       catch (e) { existing = []; }
     }
     const legs = LEG_DEFINITIONS.map((def, i) => ({
-      legNumber: def.leg,
-      loop:      def.loop,
-      runner:    runners[(def.leg - 1) % 8] || '',
-      actualFinish: (existing[i] && existing[i].actualFinish) || null,
+      legNumber:     def.leg,
+      loop:          def.loop,
+      runner:        runners[(def.leg - 1) % 8] || '',
+      actualFinish:  (existing[i] && existing[i].actualFinish)  || null,
+      overrideMiles: (existing[i] && existing[i].overrideMiles != null)
+                       ? existing[i].overrideMiles : null,
     }));
     localStorage.setItem('raceLegs', JSON.stringify(legs));
     return legs;
@@ -1493,15 +1508,17 @@
     return s >= nightStartMin && s < nightEndMin;
   }
 
+  function getEffectiveMiles(state, cfg) {
+    if (state.overrideMiles != null) return state.overrideMiles;
+    if (state.loop === 'Green')  return parseMiles(cfg.greenMiles);
+    if (state.loop === 'Yellow') return parseMiles(cfg.yellowMiles);
+    if (state.loop === 'Red')    return parseMiles(cfg.redMiles);
+    return 0;
+  }
+
   function calculateLegData() {
     const cfg  = loadConfig();
     const legs = loadRaceLegs();
-
-    const milesMap = {
-      Green:  parseMiles(cfg.greenMiles),
-      Yellow: parseMiles(cfg.yellowMiles),
-      Red:    parseMiles(cfg.redMiles),
-    };
     const configAvgPace    = parsePaceMinutes(cfg.avgPace);
     const nightAdjPct      = parseFloat(cfg.nightAdjustment) || 0;
     const nightStartMin    = timeToMinutes(cfg.nightStart  || '8:00 PM');
@@ -1515,7 +1532,7 @@
     return LEG_DEFINITIONS.map((def, i) => {
       const state     = legs[i] || {};
       const runner    = state.runner || '';
-      const loopMiles = milesMap[def.loop] || 0;
+      const loopMiles = getEffectiveMiles({ ...def, ...state, loop: def.loop }, cfg);
 
       const startMinutes = prevFinish;
       const night = isNightLeg(startMinutes, nightStartMin, nightEndMin);
@@ -1565,6 +1582,7 @@
         ...def,
         runner,
         actualFinish:        state.actualFinish || null,
+        overrideMiles:       state.overrideMiles != null ? state.overrideMiles : null,
         loopMiles,
         startMinutes,
         estFinishMinutes,
@@ -1905,6 +1923,40 @@
 
   // ── Config keypad entry ──────────────────────────────────────────────────
 
+  function openMilesOverrideKeypad(legIndex) {
+    const legs = loadRaceLegs();
+    const state = legs[legIndex] || {};
+    const cfg   = loadConfig();
+    // Pre-populate with current effective miles
+    const currentMiles = state.overrideMiles != null
+      ? state.overrideMiles
+      : getEffectiveMiles({ ...state, loop: state.loop || '' }, cfg);
+
+    let initBuffer = [];
+    if (currentMiles > 0) {
+      const tenths = Math.round(currentMiles * 10);
+      if      (tenths < 10)  initBuffer = [tenths];
+      else if (tenths < 100) initBuffer = [Math.floor(tenths/10), tenths%10];
+      else                   initBuffer = [Math.floor(tenths/100), Math.floor((tenths%100)/10), tenths%10];
+    }
+
+    keypadState.legIndex    = legIndex;
+    keypadState.buffer      = initBuffer;
+    keypadState.bufferStr   = '';
+    keypadState.ampm        = 'AM';
+    keypadState.confirmClear = false;
+    keypadState.dirty       = false;
+    keypadState.context     = 'milesOverride';
+    keypadState.variant     = 'miles';
+    keypadState.configField = null;
+    keypadState.configUnit  = ' mi';
+
+    const legNum = state.legNumber || (legIndex + 1);
+    document.getElementById('keypadLegLabel').textContent = `Loop Miles — Leg ${legNum}`;
+    keypadRender();
+    document.getElementById('keypadOverlay').classList.add('visible');
+  }
+
   function openCfgKeypad(field) {
     const el = document.querySelector(`[data-cfg="${field}"]`);
     const displayValue = el ? el.textContent.trim() : '';
@@ -2048,9 +2100,24 @@
 
       if (val <= 0 || val > 20) { flashKeypadError(); return; }
 
-      const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
-      if (el) el.textContent = `${val} mi`;
-      document.getElementById('keypadOverlay').classList.remove('visible');
+      if (context === 'milesOverride') {
+        // Save to raceLegs; if value matches config default, clear override
+        const legs       = loadRaceLegs();
+        const legIndex   = keypadState.legIndex;
+        const cfg        = loadConfig();
+        const defaultMiles = getEffectiveMiles(
+          { ...legs[legIndex], overrideMiles: null }, cfg);
+        legs[legIndex].overrideMiles = (val === defaultMiles) ? null : val;
+        localStorage.setItem('raceLegs', JSON.stringify(legs));
+        writeBackup();
+        document.getElementById('keypadOverlay').classList.remove('visible');
+        fullRender();
+        refreshRowModal();
+      } else {
+        const el = document.querySelector(`[data-cfg="${keypadState.configField}"]`);
+        if (el) el.textContent = `${val} mi`;
+        document.getElementById('keypadOverlay').classList.remove('visible');
+      }
 
     // ── Variant Percent: implied decimal ────────────────────────────────
     } else if (variant === 'percent') {
@@ -2178,7 +2245,9 @@
       </div>
       <div class="modal-field">
         <span class="modal-label">Loop miles</span>
-        <span class="modal-value">${leg.loopMiles} mi</span>
+        <span id="modalMilesField"
+              class="modal-miles-field ${leg.overrideMiles != null ? 'modal-value-green' : 'modal-value'}"
+        >${leg.loopMiles} mi</span>
       </div>
       <div class="modal-field">
         <span class="modal-label">Start</span>
@@ -2213,6 +2282,29 @@
         <span class="modal-value ${leg.actualPace === null ? 'modal-value-muted' : ''}">${formatPaceDisplay(leg.actualPace)}</span>
       </div>
     `;
+
+    // Press-and-hold on Loop Miles field — only available on completed legs
+    const milesEl = document.getElementById('modalMilesField');
+    if (milesEl) {
+      let holdTimer = null;
+      let flashTimer = null;
+      const clearHold = () => {
+        clearTimeout(holdTimer);
+        clearTimeout(flashTimer);
+        milesEl.classList.remove('holding');
+        holdTimer = null;
+      };
+      milesEl.addEventListener('pointerdown', () => {
+        if (!leg.actualFinish) return;
+        flashTimer = setTimeout(() => milesEl.classList.add('holding'), 1500);
+        holdTimer  = setTimeout(() => {
+          milesEl.classList.remove('holding');
+          openMilesOverrideKeypad(legIndex);
+        }, 3000);
+      });
+      milesEl.addEventListener('pointerup',    clearHold);
+      milesEl.addEventListener('pointerleave', clearHold);
+    }
 
     document.getElementById('rowModal').classList.add('visible');
   }
@@ -2630,9 +2722,10 @@
         const dur      = done
           ? (leg.actualDuration !== null ? formatDuration(leg.actualDuration) : '—')
           : formatDuration(leg.estDuration);
-        const pace     = done
+        const paceStr  = done
           ? (leg.actualPace !== null ? formatPaceDisplay(leg.actualPace) : '—')
           : formatPaceDisplay(leg.predictedPace);
+        const pace     = (done && leg.overrideMiles != null) ? `${paceStr}*` : paceStr;
 
         return `<div class="rs-leg-row ${rowClass}">
           <div class="rs-color-bar" style="background:${barColor}"></div>
