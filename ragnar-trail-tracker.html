@@ -855,20 +855,25 @@
     }
 
     /* ── Runner Stats panel ── */
+    /* Runner Stats — floating overlay modal */
     .runner-stats-panel {
       display: none;
       position: fixed;
       inset: 0;
-      background: #111;
+      background: rgba(0,0,0,0.82);
       z-index: 800;
-      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .runner-stats-panel.visible { display: flex; }
 
     .runner-stats-card {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      width: 95vw;
+      max-height: 90vh;
+      background: #111;
+      border-radius: 10px;
       overflow: hidden;
     }
 
@@ -904,13 +909,17 @@
       font-style: italic;
     }
 
-    .rs-col-header {
+    /* col layout: color-bar | gap | leg# | loop | start | finish | dur | pace */
+    .rs-col-header,
+    .rs-leg-row {
       display: grid;
-      grid-template-columns: 4px 28px 44px 1fr 1fr 36px 52px;
+      grid-template-columns: 8px 4px 26px 44px 1fr 1fr 34px 52px;
       align-items: center;
+    }
+
+    .rs-col-header {
       background: #161616;
-      padding: 3px 11px 3px 0;
-      gap: 0;
+      padding: 3px 8px 3px 0;
     }
 
     .rs-col-header span {
@@ -918,38 +927,83 @@
       color: #555;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding: 0 3px;
+      padding: 0 2px;
     }
 
     .rs-leg-row {
-      display: grid;
-      grid-template-columns: 4px 28px 44px 1fr 1fr 36px 52px;
-      align-items: center;
       border-bottom: 1px solid #1a1a1a;
-      gap: 0;
     }
 
     .rs-color-bar {
-      width: 4px;
       align-self: stretch;
     }
 
     .rs-cell {
       font-size: 10px;
-      padding: 5px 3px;
+      padding: 5px 2px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
     }
 
-    .rs-leg-row.rs-completed .rs-cell {
+    /* Duration and pace cells: slightly smaller to prevent overflow */
+    .rs-cell-dur {
+      font-size: 9px;
+      padding: 5px 2px;
+      white-space: nowrap;
+    }
+
+    .rs-leg-row.rs-completed .rs-cell,
+    .rs-leg-row.rs-completed .rs-cell-dur {
       color: #fff;
       font-weight: 700;
     }
 
-    .rs-leg-row.rs-unstarted .rs-cell {
+    .rs-leg-row.rs-unstarted .rs-cell,
+    .rs-leg-row.rs-unstarted .rs-cell-dur {
       color: #999;
       font-style: italic;
+    }
+
+    /* Team Totals section */
+    .rs-totals-section {
+      background: #1a1a1a;
+      padding: 10px 11px;
+      border-top: 2px solid #2a2a2a;
+    }
+
+    .rs-totals-title {
+      font-size: 9px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .rs-totals-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .rs-totals-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .rs-totals-value {
+      font-size: 14px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .rs-totals-label {
+      font-size: 8px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .backup-banner {
@@ -2536,21 +2590,26 @@
     const configPace = parsePaceMinutes(cfg.avgPace);
     const loopColors = { Green: '#1a6b1a', Yellow: '#6b6b00', Red: '#6b1a1a' };
 
-    // Group legs by runner slot (runners 1–8, each has 3 legs)
+    // Group legs by runner slot (runners 1–8, each has 3 legs at positions r-1, r+7, r+15)
     const runnerSlots = [];
     for (let r = 1; r <= 8; r++) {
       const name     = cfg[`runner${r}`] || `Runner ${r}`;
-      // Legs for this runner: every 8th leg starting at index r-1
-      const runnerLegs = legs.filter((_, i) => (i % 8) === (r - 1));
+      const runnerLegs = [legs[r-1], legs[r+7], legs[r+15]].filter(Boolean);
       runnerSlots.push({ name, runnerLegs });
     }
 
-    const html = runnerSlots.map(({ name, runnerLegs }) => {
+    const colHeader = `
+      <div class="rs-col-header">
+        <span></span><span></span>
+        <span>Leg</span><span>Loop</span><span>Start</span>
+        <span>Finish</span><span>Dur</span><span>Pace</span>
+      </div>`;
+
+    const sectionsHtml = runnerSlots.map(({ name, runnerLegs }) => {
       const completedLegs = runnerLegs.filter(l => l.actualFinish);
       const numComplete   = completedLegs.length;
       const hasHistory    = numComplete > 0;
 
-      // Avg pace: actual avg if history, else config baseline
       let avgPaceStr;
       if (hasHistory) {
         const avgPace = completedLegs.reduce((s, l) => s + (l.actualPace || 0), 0) / numComplete;
@@ -2562,33 +2621,27 @@
       const summaryClass = hasHistory ? '' : ' baseline';
       const summaryText  = `${numComplete} of 3 complete · avg ${avgPaceStr}`;
 
-      const colHeader = `
-        <div class="rs-col-header">
-          <span></span>
-          <span>Leg</span><span>Loop</span><span>Start</span>
-          <span>Finish</span><span>Dur</span><span>Pace</span>
-        </div>`;
-
       const legRows = runnerLegs.map(leg => {
-        const done      = !!leg.actualFinish;
-        const rowClass  = done ? 'rs-completed' : 'rs-unstarted';
-        const barColor  = loopColors[leg.loop] || '#333';
-        const finish    = done ? leg.actualFinish : leg.estFinishStr;
-        const dur       = done
-          ? (leg.actualDuration   !== null ? formatDuration(leg.actualDuration)   : '—')
+        const done     = !!leg.actualFinish;
+        const rowClass = done ? 'rs-completed' : 'rs-unstarted';
+        const barColor = loopColors[leg.loop] || '#333';
+        const finish   = done ? leg.actualFinish : leg.estFinishStr;
+        const dur      = done
+          ? (leg.actualDuration !== null ? formatDuration(leg.actualDuration) : '—')
           : formatDuration(leg.estDuration);
-        const pace      = done
-          ? (leg.actualPace       !== null ? formatPaceDisplay(leg.actualPace)    : '—')
+        const pace     = done
+          ? (leg.actualPace !== null ? formatPaceDisplay(leg.actualPace) : '—')
           : formatPaceDisplay(leg.predictedPace);
 
         return `<div class="rs-leg-row ${rowClass}">
           <div class="rs-color-bar" style="background:${barColor}"></div>
+          <div></div>
           <div class="rs-cell">${leg.legNumber}</div>
           <div class="rs-cell">${leg.loop}</div>
           <div class="rs-cell">${leg.startTimeStr}</div>
           <div class="rs-cell">${finish}</div>
-          <div class="rs-cell">${dur}</div>
-          <div class="rs-cell">${pace}</div>
+          <div class="rs-cell-dur">${dur}</div>
+          <div class="rs-cell-dur">${pace}</div>
         </div>`;
       }).join('');
 
@@ -2602,7 +2655,34 @@
       </div>`;
     }).join('');
 
-    document.getElementById('runnerStatsBody').innerHTML = html;
+    // Team Totals
+    const allCompleted  = legs.filter(l => l.actualFinish);
+    const totalComplete = allCompleted.length;
+    const totalDurMin   = allCompleted.reduce((s, l) => s + (l.actualDuration || 0), 0);
+    const totalRunTime  = totalComplete > 0 ? formatDuration(totalDurMin) : '—';
+    const teamAvgPace   = totalComplete > 0
+      ? formatPaceDisplay(allCompleted.reduce((s, l) => s + (l.actualPace || 0), 0) / totalComplete)
+      : '—';
+
+    const totalsHtml = `<div class="rs-totals-section">
+      <div class="rs-totals-title">Team Totals</div>
+      <div class="rs-totals-row">
+        <div class="rs-totals-item">
+          <div class="rs-totals-value">${totalComplete}</div>
+          <div class="rs-totals-label">Legs complete</div>
+        </div>
+        <div class="rs-totals-item">
+          <div class="rs-totals-value">${totalRunTime}</div>
+          <div class="rs-totals-label">Total run time</div>
+        </div>
+        <div class="rs-totals-item">
+          <div class="rs-totals-value">${teamAvgPace}</div>
+          <div class="rs-totals-label">Team avg pace</div>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById('runnerStatsBody').innerHTML = sectionsHtml + totalsHtml;
   }
 
   // ── Automatic Backup (File System Access API) ────────────────────────────
