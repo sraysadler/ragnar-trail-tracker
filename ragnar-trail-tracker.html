@@ -945,15 +945,13 @@
       overflow: visible;
     }
 
-    /* Duration and pace cells — right-aligned, consistent with headers */
+    /* Duration and pace cells — left-aligned, consistent with headers */
     .rs-cell-dur,
-    .rs-cell-pace,
-    .rs-hdr-dur,
-    .rs-hdr-pace {
+    .rs-cell-pace {
       font-size: 9px;
       padding: 5px 4px;
       white-space: nowrap;
-      text-align: right;
+      text-align: left;
     }
 
     .rs-hdr-dur,
@@ -963,6 +961,7 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       padding: 3px 4px;
+      text-align: left;
     }
 
     .rs-leg-row.rs-completed .rs-cell,
