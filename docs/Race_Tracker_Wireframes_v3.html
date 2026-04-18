@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Tracker Wireframes v3</title>
+<style>
+  body { background: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 2rem; }
+  h1 { font-size: 18px; font-weight: 500; color: #333; margin: 0 0 4px; }
+  p.sub { font-size: 13px; color: #777; margin: 0 0 2rem; }
+  .wf-wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; max-width: 1100px; }
+  .wf-label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; }
+  .device { background: #111; border-radius: 14px; border: 2px solid #333; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; width: 100%; }
+
+  /* Header */
+  .dh { background: #1a1a1a; border-bottom: 1px solid #333; padding: 7px 9px; display: flex; align-items: center; justify-content: space-between; }
+  .dh-left { display: flex; flex-direction: column; }
+  .dh-title { font-size: 10px; color: #fff; font-weight: 500; }
+  .dh-sub { font-size: 8px; color: #888; }
+  .dh-time-wrap { display: flex; flex-direction: column; align-items: flex-end; }
+  .dh-time-label { font-size: 7px; color: #666; }
+  .dh-time { font-size: 10px; color: #bbb; }
+
+  /* Status bar */
+  .proj-bar { background: #1a2e1a; border-bottom: 1px solid #2d5a2d; padding: 5px 9px; display: flex; align-items: center; justify-content: space-between; }
+  .proj-label { font-size: 8px; color: #5a9e5a; text-transform: uppercase; letter-spacing: 0.04em; }
+  .proj-val { font-size: 13px; color: #7dcc7d; font-weight: 500; }
+  .status { background: #0d0d0d; border-bottom: 1px solid #333; padding: 4px 9px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-label { font-size: 7px; color: #555; }
+  .stat-val { font-size: 9px; color: #ddd; font-weight: 500; }
+
+  /* Race table */
+  .tbl-head { display: grid; grid-template-columns: 16px 36px 18px 1fr 1fr 1fr; background: #1a1a1a; border-bottom: 1px solid #444; padding: 5px 6px; gap: 2px; }
+  .th { font-size: 8px; color: #777; font-weight: 500; }
+  .tbl-body { overflow: hidden; }
+  .tbl-row { display: grid; grid-template-columns: 16px 36px 18px 1fr 1fr 1fr; padding: 6px 6px; border-bottom: 1px solid #1e1e1e; gap: 2px; }
+  .tbl-row.green { background: #003300; }
+  .tbl-row.yellow { background: #444400; }
+  .tbl-row.red { background: #330000; }
+  .td { font-size: 8px; color: #ccc; display: flex; align-items: center; }
+  .td.actual { font-weight: 700; color: #fff; }
+  .td.est { color: #999; font-style: italic; }
+  .td.tap { border: 1px dashed #444; border-radius: 2px; padding: 1px 2px; color: #555; font-style: italic; font-size: 7px; }
+
+  /* Footer */
+  .footer { background: #1a1a1a; border-top: 1px solid #333; padding: 6px 9px; display: flex; align-items: center; justify-content: space-between; }
+  .f-saved { font-size: 7px; color: #444; display: flex; align-items: center; gap: 3px; }
+  .f-dot { width: 6px; height: 6px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
+  .btn-sm { font-size: 8px; color: #aaa; border: 1px solid #444; border-radius: 3px; padding: 3px 6px; background: #222; }
+  .btn-stats { font-size: 8px; color: #4a9eff; border: 1px solid #4a9eff; border-radius: 3px; padding: 3px 6px; background: #0a1a2a; }
+
+  /* Row Detail Modal */
+  .modal-bg { background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; padding: 10px; min-height: 300px; }
+  .modal-card { background: #1c1c1c; border: 1px solid #444; border-radius: 10px; width: 100%; overflow: hidden; }
+  .modal-hdr { display: flex; justify-content: space-between; align-items: center; padding: 7px 9px; border-bottom: 1px solid #333; }
+  .modal-title { font-size: 10px; color: #fff; font-weight: 500; }
+  .modal-x { font-size: 9px; color: #666; border: 1px solid #444; border-radius: 3px; padding: 1px 5px; background: #222; }
+  .mrow { display: flex; justify-content: space-between; align-items: center; padding: 4px 9px; border-bottom: 1px solid #1e1e1e; }
+  .ml { font-size: 8px; color: #666; }
+  .mv { font-size: 8px; color: #ccc; }
+  .mv.bold { font-weight: 700; color: #fff; }
+  .mv.est { color: #999; font-style: italic; }
+  .mv.live-blue { color: #4a9eff; }
+  .mv.none { color: #444; }
+  .mv.green { color: #4caf50; font-weight: 500; }
+  .edit-tap { font-size: 8px; border: 1px solid #4a9eff; border-radius: 3px; padding: 2px 6px; color: #555; font-style: italic; background: #0a1a2a; }
+  .miles-tap { font-size: 8px; border: 1px dotted #555; border-radius: 3px; padding: 2px 6px; color: #ccc; }
+  .miles-tap.override { color: #4caf50; border-color: #4caf50; }
+  .runner-drop { font-size: 8px; color: #ccc; background: #2a2a2a; border: 1px solid #444; border-radius: 3px; padding: 2px 5px; display: flex; justify-content: space-between; width: 65px; }
+  .modal-btns { display: flex; }
+  .mbtn { flex: 1; font-size: 8px; padding: 6px 4px; text-align: center; }
+  .mbtn.cancel { background: #1a1a1a; color: #777; border-top: 1px solid #333; border-right: 1px solid #333; }
+  .mbtn.confirm { background: #1a3a1a; color: #4caf50; border-top: 1px solid #333; }
+
+  /* Keypad */
+  .kp-display { background: #0a0a0a; border-bottom: 1px solid #333; padding: 10px 9px; text-align: center; }
+  .kp-ctx { font-size: 8px; color: #666; margin-bottom: 3px; }
+  .kp-time { font-size: 22px; color: #fff; font-weight: 500; letter-spacing: 2px; }
+  .kp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #333; }
+  .kp-btn { background: #1a1a1a; padding: 9px 4px; text-align: center; font-size: 12px; color: #ddd; }
+  .kp-btn.sm { font-size: 8px; color: #999; }
+  .kp-btn.blank { background: #111; }
+  .kp-btn.del { color: #777; }
+  .kp-actions { display: flex; gap: 1px; background: #333; }
+  .kp-action { flex: 1; background: #111; padding: 8px; text-align: center; font-size: 9px; }
+  .kp-action.cancel { color: #777; }
+  .kp-action.confirm { color: #4caf50; font-weight: 500; }
+
+  /* Settings */
+  .cfg-body { padding: 7px 9px; overflow: hidden; }
+  .cfg-sec-label { font-size: 7px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin: 6px 0 3px; }
+  .cfg-field { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid #1a1a1a; }
+  .cfg-label { font-size: 8px; color: #888; }
+  .cfg-tap { font-size: 8px; color: #ccc; background: #0a1a2a; border: 1px solid #4a9eff; border-radius: 2px; padding: 2px 5px; min-width: 65px; text-align: right; }
+  .cfg-runners { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: 3px 0 4px; }
+  .cfg-runner { background: #2a2a2a; border: 1px solid #333; border-radius: 2px; padding: 2px 5px; font-size: 8px; color: #ccc; display: flex; align-items: center; gap: 3px; }
+  .runner-num { font-size: 7px; color: #444; width: 8px; }
+  .night-row { display: flex; align-items: center; gap: 3px; padding: 3px 0; border-bottom: 1px solid #1a1a1a; }
+  .night-label { font-size: 8px; color: #888; flex: 1; }
+  .night-sep { font-size: 8px; color: #444; }
+  .cfg-tap-sm { font-size: 8px; color: #ccc; background: #0a1a2a; border: 1px solid #4a9eff; border-radius: 2px; padding: 2px 4px; flex: 1; text-align: right; }
+  .cfg-backup { padding: 5px 9px; border-top: 1px solid #222; }
+  .cfg-backup-label { font-size: 7px; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .cfg-backup-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
+  .cfg-backup-key { font-size: 7px; color: #666; }
+  .cfg-backup-val { font-size: 7px; color: #aaa; }
+  .cfg-backup-link { font-size: 7px; color: #4a9eff; text-decoration: underline; }
+  .cfg-export-btn { width: 100%; font-size: 7px; color: #aaa; border: 1px solid #444; border-radius: 2px; padding: 4px; background: #222; text-align: center; margin-top: 4px; box-sizing: border-box; }
+  .cfg-btns { display: flex; gap: 4px; padding: 6px 9px; border-top: 1px solid #333; }
+  .cfg-btn { flex: 1; font-size: 7px; border-radius: 3px; padding: 5px 3px; text-align: center; }
+  .cfg-btn.save { background: #1a3a1a; color: #4caf50; border: 1px solid #4caf50; }
+  .cfg-btn.reset { background: #222; color: #777; border: 1px solid #333; }
+  .cfg-btn.restore { background: #222; color: #4a9eff; border: 1px solid #4a9eff; }
+
+  /* Runner Stats */
+  .rs-hdr { background: #1a1a1a; border-bottom: 1px solid #333; padding: 8px 9px; display: flex; align-items: center; justify-content: space-between; }
+  .rs-title { font-size: 11px; color: #fff; font-weight: 500; }
+  .rs-body { background: #111; overflow: hidden; }
+  .rs-section { border-bottom: 2px solid #2a2a2a; }
+  .rs-runner-hdr { background: #1a1a1a; padding: 6px 9px; }
+  .rs-name { font-size: 10px; color: #fff; font-weight: 500; margin-bottom: 2px; }
+  .rs-stats { font-size: 8px; color: #888; }
+  .rs-stats.est { font-style: italic; color: #666; }
+  .rs-col-hdr { display: grid; grid-template-columns: 4px 18px 1fr 1fr 1fr 1fr 1fr; gap: 3px; padding: 2px 9px; background: #161616; border-bottom: 1px solid #222; align-items: center; }
+  .rs-ch { font-size: 6px; color: #555; text-transform: uppercase; }
+  .rs-leg-row { display: grid; grid-template-columns: 4px 18px 1fr 1fr 1fr 1fr 1fr; gap: 3px; padding: 4px 9px; border-bottom: 1px solid #1a1a1a; align-items: center; }
+  .rs-color-bar { width: 4px; align-self: stretch; min-height: 16px; }
+  .rs-color-bar.g { background: #1a6b1a; }
+  .rs-color-bar.y { background: #6b6b00; }
+  .rs-color-bar.r { background: #6b1a1a; }
+  .rs-col { font-size: 7px; color: #aaa; }
+  .rs-col.bold { color: #fff; font-weight: 700; }
+  .rs-col.est { color: #999; font-style: italic; }
+  .rs-col.ast { color: #fff; font-weight: 700; }
+  .rs-totals { background: #1a1a1a; padding: 6px 9px; border-top: 2px solid #333; }
+  .rs-totals-label { font-size: 7px; color: #555; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .rs-totals-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .rs-total-item { display: flex; flex-direction: column; align-items: center; }
+  .rs-total-val { font-size: 10px; color: #fff; font-weight: 500; }
+  .rs-total-key { font-size: 6px; color: #555; text-transform: uppercase; margin-top: 1px; }
+  .rs-scroll-hint { padding: 4px 9px; }
+  .rs-scroll-text { font-size: 6px; color: #444; font-style: italic; }
+</style>
+</head>
+<body>
+<h1>Race Tracker — UI Wireframes</h1>
+<p class="sub">Version 3 — April 17, 2026 &nbsp;·&nbsp; Updates: Runner Stats modal added; footer updated (Runner Stats replaces Export); Settings updated (Backup Status with Export CSV + folder link); Row Detail Modal updated (Loop Miles dotted border + green override); keypad blank bottom-left variant shown</p>
+
+<div class="wf-wrap">
+
+  <!-- Screen 1: Main View -->
+  <div>
+    <p class="wf-label">1 — Main view (updated footer)</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left"><span class="dh-title">Party Pace</span><span class="dh-sub">Ragnar Trail Atlanta 2026</span></div>
+        <div class="dh-time-wrap"><span class="dh-time-label">Current time:</span><span class="dh-time">2:24 PM</span></div>
+      </div>
+      <div class="proj-bar"><span class="proj-label">Projected team finish</span><span class="proj-val">11:14 AM</span></div>
+      <div class="status">
+        <div class="stat-item"><span class="stat-label">Current loop</span><span class="stat-val">6 – Ray</span></div>
+        <div class="stat-item"><span class="stat-label">Next runner</span><span class="stat-val">Jenny</span></div>
+        <div class="stat-item"><span class="stat-label">Next start</span><span class="stat-val">3:35 PM</span></div>
+      </div>
+      <div class="tbl-head"><span class="th">#</span><span class="th">Runner</span><span class="th">Lp</span><span class="th">Start</span><span class="th">Est fin</span><span class="th">Actual</span></div>
+      <div class="tbl-body">
+        <div class="tbl-row green"><span class="td">1</span><span class="td">Wendy</span><span class="td">G</span><span class="td actual">9:00 AM</span><span class="td actual">9:50 AM</span><span class="td actual">9:50 AM</span></div>
+        <div class="tbl-row yellow"><span class="td">2</span><span class="td">Kristine</span><span class="td">Y</span><span class="td actual">9:50 AM</span><span class="td actual">11:08 AM</span><span class="td actual">11:08 AM</span></div>
+        <div class="tbl-row red"><span class="td">3</span><span class="td">Scott</span><span class="td">R</span><span class="td actual">11:08 AM</span><span class="td actual">12:20 PM</span><span class="td actual">12:20 PM</span></div>
+        <div class="tbl-row green"><span class="td">4</span><span class="td">Jeff</span><span class="td">G</span><span class="td actual">12:20 PM</span><span class="td actual">1:13 PM</span><span class="td actual">1:13 PM</span></div>
+        <div class="tbl-row yellow"><span class="td">5</span><span class="td">Jason</span><span class="td">Y</span><span class="td actual">1:13 PM</span><span class="td actual">2:21 PM</span><span class="td actual">2:21 PM</span></div>
+        <div class="tbl-row red" style="outline:2px solid #fff"><span class="td">6</span><span class="td">Ray</span><span class="td">R</span><span class="td actual">2:21 PM</span><span class="td est">3:35 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row green"><span class="td">7</span><span class="td">Jenny</span><span class="td">G</span><span class="td est">3:35 PM</span><span class="td est">4:21 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row yellow"><span class="td">8</span><span class="td">Tim</span><span class="td">Y</span><span class="td est">4:21 PM</span><span class="td est">5:32 PM</span><span class="td tap">tap</span></div>
+        <div class="tbl-row red"><span class="td">9</span><span class="td">Wendy</span><span class="td">R</span><span class="td est">5:32 PM</span><span class="td est">6:44 PM</span><span class="td tap">tap</span></div>
+      </div>
+      <div class="footer">
+        <span class="btn-stats">Runner Stats</span>
+        <span class="f-saved"><span class="f-dot"></span>Last saved 2:23 PM</span>
+        <span class="btn-sm">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Row Detail Modal with override -->
+  <div>
+    <p class="wf-label">2 — Row detail modal (loop miles override)</p>
+    <div class="device">
+      <div class="dh">
+        <div class="dh-left"><span class="dh-title">Party Pace</span><span class="dh-sub">Ragnar Trail Atlanta 2026</span></div>
+        <div class="dh-time-wrap"><span class="dh-time-label">Current time:</span><span class="dh-time">2:24 PM</span></div>
+      </div>
+      <div class="proj-bar"><span class="proj-label">Projected team finish</span><span class="proj-val">11:14 AM</span></div>
+      <div class="status">
+        <div class="stat-item"><span class="stat-label">Current loop</span><span class="stat-val">6 – Ray</span></div>
+        <div class="stat-item"><span class="stat-label">Next runner</span><span class="stat-val">Jenny</span></div>
+        <div class="stat-item"><span class="stat-label">Next start</span><span class="stat-val">3:35 PM</span></div>
+      </div>
+      <div class="modal-bg">
+        <div class="modal-card">
+          <div class="modal-hdr"><span class="modal-title">Leg 2 — Yellow</span><span class="modal-x">✕ Close</span></div>
+          <div class="mrow"><span class="ml">Runner</span><span class="runner-drop"><span>Kristine</span><span style="color:#555">▾</span></span></div>
+          <div class="mrow"><span class="ml">Loop miles <span style="color:#555;font-size:6px">hold 3s</span></span><span class="miles-tap override">7.0 mi</span></div>
+          <div class="mrow"><span class="ml">Start</span><span class="mv bold">9:50 AM</span></div>
+          <div class="mrow"><span class="ml">Est finish</span><span class="mv est">11:27 AM</span></div>
+          <div class="mrow"><span class="ml">Actual finish</span><span class="mv bold">11:08 AM</span></div>
+          <div class="mrow"><span class="ml">Status</span><span class="mv" style="color:#4caf50">Actual</span></div>
+          <div class="mrow"><span class="ml">Est duration</span><span class="mv est">1:37</span></div>
+          <div class="mrow"><span class="ml">Actual duration</span><span class="mv bold">1:18</span></div>
+          <div class="mrow"><span class="ml">Predicted pace</span><span class="mv">12:00/mi</span></div>
+          <div class="mrow"><span class="ml">Actual pace</span><span class="mv bold">11:09/mi</span></div>
+          <div class="modal-btns"><span class="mbtn cancel">Cancel</span><span class="mbtn confirm">Save changes</span></div>
+        </div>
+      </div>
+      <div class="footer">
+        <span class="btn-stats">Runner Stats</span>
+        <span class="f-saved"><span class="f-dot"></span>Last saved 2:23 PM</span>
+        <span class="btn-sm">Settings</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Settings updated -->
+  <div>
+    <p class="wf-label">3 — Settings (backup status + export)</p>
+    <div class="device">
+      <div class="dh"><div class="dh-left"><span class="dh-title">Settings</span></div><span class="btn-sm">✕ Close</span></div>
+      <div class="cfg-body">
+        <div class="cfg-sec-label">Race info</div>
+        <div class="cfg-field"><span class="cfg-label">Team name</span><span class="cfg-tap">Party Pace</span></div>
+        <div class="cfg-field"><span class="cfg-label">Event name</span><span class="cfg-tap">Ragnar ATL 2026</span></div>
+        <div class="cfg-field"><span class="cfg-label">Start time</span><span class="cfg-tap">9:00 AM</span></div>
+        <div class="cfg-sec-label">Runners (in order)</div>
+        <div class="cfg-runners">
+          <div class="cfg-runner"><span class="runner-num">1</span>Wendy</div>
+          <div class="cfg-runner"><span class="runner-num">2</span>Kristine</div>
+          <div class="cfg-runner"><span class="runner-num">3</span>Scott</div>
+          <div class="cfg-runner"><span class="runner-num">4</span>Jeff</div>
+          <div class="cfg-runner"><span class="runner-num">5</span>Jason</div>
+          <div class="cfg-runner"><span class="runner-num">6</span>Ray</div>
+          <div class="cfg-runner"><span class="runner-num">7</span>Jenny</div>
+          <div class="cfg-runner"><span class="runner-num">8</span>Tim</div>
+        </div>
+        <div class="cfg-sec-label">Loop distances</div>
+        <div class="cfg-field"><span class="cfg-label">Green</span><span class="cfg-tap">4.0 mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Yellow</span><span class="cfg-tap">5.0 mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Red</span><span class="cfg-tap">6.0 mi</span></div>
+        <div class="cfg-sec-label">Pace settings</div>
+        <div class="cfg-field"><span class="cfg-label">Avg pace</span><span class="cfg-tap">12:00 /mi</span></div>
+        <div class="cfg-field"><span class="cfg-label">Night adjustment</span><span class="cfg-tap">5%</span></div>
+        <div class="cfg-sec-label">Night hours</div>
+        <div class="night-row"><span class="night-label">From</span><span class="cfg-tap-sm">8:00 PM</span><span class="night-sep">–</span><span class="cfg-tap-sm">7:00 AM</span></div>
+      </div>
+      <div class="cfg-backup">
+        <div class="cfg-backup-label">Backup status</div>
+        <div class="cfg-backup-row"><span class="cfg-backup-key">Backup folder</span><span class="cfg-backup-link">ragnar backups</span></div>
+        <div class="cfg-backup-row"><span class="cfg-backup-key">Last backed up</span><span class="cfg-backup-val">4/17/2026, 2:22 PM</span></div>
+        <div class="cfg-export-btn">⬆ Export CSV</div>
+      </div>
+      <div class="cfg-btns"><span class="cfg-btn reset">Reset</span><span class="cfg-btn restore">Restore</span><span class="cfg-btn save">Save</span></div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Time entry keypad -->
+  <div>
+    <p class="wf-label">4 — Time entry keypad</p>
+    <div class="device">
+      <div class="dh"><div class="dh-left"><span class="dh-title">Enter finish time</span><span class="dh-sub">Leg 6 — Ray</span></div></div>
+      <div class="kp-display"><div class="kp-ctx">Leg 6 — Ray</div><div class="kp-time">03:35 PM</div></div>
+      <div class="kp-grid">
+        <div class="kp-btn">1</div><div class="kp-btn">2</div><div class="kp-btn">3</div>
+        <div class="kp-btn">4</div><div class="kp-btn">5</div><div class="kp-btn">6</div>
+        <div class="kp-btn">7</div><div class="kp-btn">8</div><div class="kp-btn">9</div>
+        <div class="kp-btn sm">AM/PM</div><div class="kp-btn">0</div><div class="kp-btn del">⌫</div>
+      </div>
+      <div class="kp-actions"><div class="kp-action cancel">Cancel</div><div class="kp-action confirm">Confirm</div></div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Runner Stats Modal -->
+  <div>
+    <p class="wf-label">5 — Runner stats modal</p>
+    <div class="device">
+      <div class="rs-hdr"><span class="rs-title">Runner Stats</span><span class="btn-sm">✕ Close</span></div>
+      <div class="rs-body">
+
+        <div class="rs-section">
+          <div class="rs-runner-hdr">
+            <div class="rs-name">Wendy</div>
+            <div class="rs-stats">2 of 3 complete · avg 11:55/mi</div>
+          </div>
+          <div class="rs-col-hdr"><span></span><span class="rs-ch">Leg</span><span class="rs-ch">Loop</span><span class="rs-ch">Start</span><span class="rs-ch">Finish</span><span class="rs-ch">Dur</span><span class="rs-ch">Pace</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar g"></div><span class="rs-col bold">1</span><span class="rs-col bold">Green</span><span class="rs-col bold">9:00 AM</span><span class="rs-col bold">9:50 AM</span><span class="rs-col bold">0:50</span><span class="rs-col bold">12:30/mi</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar r"></div><span class="rs-col bold">9</span><span class="rs-col bold">Red</span><span class="rs-col bold">5:02 PM</span><span class="rs-col bold">6:10 PM</span><span class="rs-col bold">1:08</span><span class="rs-col ast">11:20/mi*</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar y"></div><span class="rs-col">17</span><span class="rs-col">Yellow</span><span class="rs-col est">1:06 AM</span><span class="rs-col est">2:09 AM</span><span class="rs-col est">1:03</span><span class="rs-col est">12:36/mi</span></div>
+        </div>
+
+        <div class="rs-section">
+          <div class="rs-runner-hdr">
+            <div class="rs-name">Kristine</div>
+            <div class="rs-stats">1 of 3 complete · avg 15:36/mi</div>
+          </div>
+          <div class="rs-col-hdr"><span></span><span class="rs-ch">Leg</span><span class="rs-ch">Loop</span><span class="rs-ch">Start</span><span class="rs-ch">Finish</span><span class="rs-ch">Dur</span><span class="rs-ch">Pace</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar y"></div><span class="rs-col bold">2</span><span class="rs-col bold">Yellow</span><span class="rs-col bold">9:50 AM</span><span class="rs-col bold">11:08 AM</span><span class="rs-col bold">1:18</span><span class="rs-col bold">15:36/mi</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar g"></div><span class="rs-col">10</span><span class="rs-col">Green</span><span class="rs-col est">6:10 PM</span><span class="rs-col est">7:14 PM</span><span class="rs-col est">1:04</span><span class="rs-col est">16:24/mi</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar r"></div><span class="rs-col">18</span><span class="rs-col">Red</span><span class="rs-col est">2:20 AM</span><span class="rs-col est">4:08 AM</span><span class="rs-col est">1:48</span><span class="rs-col est">18:00/mi</span></div>
+        </div>
+
+        <div class="rs-section">
+          <div class="rs-runner-hdr">
+            <div class="rs-name">Scott</div>
+            <div class="rs-stats est">0 of 3 complete · avg 12:00/mi</div>
+          </div>
+          <div class="rs-col-hdr"><span></span><span class="rs-ch">Leg</span><span class="rs-ch">Loop</span><span class="rs-ch">Start</span><span class="rs-ch">Finish</span><span class="rs-ch">Dur</span><span class="rs-ch">Pace</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar r"></div><span class="rs-col">3</span><span class="rs-col">Red</span><span class="rs-col est">11:08 AM</span><span class="rs-col est">12:20 PM</span><span class="rs-col est">1:12</span><span class="rs-col est">12:00/mi</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar y"></div><span class="rs-col">11</span><span class="rs-col">Yellow</span><span class="rs-col est">6:55 PM</span><span class="rs-col est">7:55 PM</span><span class="rs-col est">1:00</span><span class="rs-col est">12:00/mi</span></div>
+          <div class="rs-leg-row"><div class="rs-color-bar g"></div><span class="rs-col">19</span><span class="rs-col">Green</span><span class="rs-col est">3:33 AM</span><span class="rs-col est">4:21 AM</span><span class="rs-col est">0:48</span><span class="rs-col est">12:00/mi</span></div>
+        </div>
+
+        <div style="padding: 4px 9px; background: #161616;">
+          <span class="rs-scroll-text">... 5 more runners — scroll to see all ...</span>
+        </div>
+
+        <div class="rs-totals">
+          <div class="rs-totals-label">Team Totals</div>
+          <div class="rs-totals-grid">
+            <div class="rs-total-item"><span class="rs-total-val">16</span><span class="rs-total-key">Legs complete</span></div>
+            <div class="rs-total-item"><span class="rs-total-val">16:06</span><span class="rs-total-key">Total run time</span></div>
+            <div class="rs-total-item"><span class="rs-total-val">11:52/mi</span><span class="rs-total-key">Team avg pace</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
