@@ -954,8 +954,19 @@
 
     .rs-cell-pace {
       font-size: 9px;
-      padding: 5px 2px 5px 8px;
+      padding: 5px 2px;
       white-space: nowrap;
+    }
+
+    /* Give Dur and Pace columns consistent left padding so headers and values align */
+    .rs-col-header span:nth-child(7),
+    .rs-col-header span:nth-child(8) {
+      padding-left: 6px;
+    }
+
+    .rs-cell-dur,
+    .rs-cell-pace {
+      padding-left: 6px;
     }
 
     .rs-leg-row.rs-completed .rs-cell,
