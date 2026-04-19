@@ -16,10 +16,11 @@ Ragnar Trail relay races. Primary target: Android tablet, Chrome.
 
 ---
 
-## Current Status (April 17, 2026)
+## Current Status (April 18, 2026)
 
 **The app is feature-complete and has been tested on the target Android
-device.** Steps 1–25 of the build sequence are complete.
+device.** Steps 1–25 of the build sequence are complete. A bug fix and
+code review were completed April 18.
 
 ### What's done:
 - Full race table with 24 legs, cascading start times, estimated finishes
@@ -35,7 +36,8 @@ device.** Steps 1–25 of the build sequence are complete.
 - Visual design refinement
 
 ### What remains:
-- UAT testing (checklist exists in docs/)
+- Fix CR-01, CR-02, CR-03 (see Known Issues — fix before race day)
+- UAT testing (checklist exists in docs/, v3)
 - Race day kiosk setup verification on Android tablet
 - Screen Pinning on ECOPAD tablet — still being figured out, not blocking
 
@@ -66,6 +68,9 @@ device.** Steps 1–25 of the build sequence are complete.
 - `getEffectiveMiles(leg, config)` used everywhere loop miles are needed
 - Pace history stores normalized day-equivalent paces only
 - Runner Stats and all forecasting uses `runner` field, not `defaultRunner`
+- `initRaceLegs(preserveActuals=true)` preserves `runner`, `actualFinish`,
+  and `overrideMiles` from existing leg data — all three fields must be
+  preserved together on Settings save
 
 ---
 
@@ -134,7 +139,7 @@ Four fixed zones + one scrollable:
 
 ## Recent Changes (since last major doc update)
 
-All of these are reflected in v3 documents:
+Changes in v3 documents (April 15–17):
 - Night pace adjustment updated to pace-based with normalization
 - Runner Stats modal added (footer button)
 - Export button moved from footer to Settings panel (Backup Status section)
@@ -143,6 +148,49 @@ All of these are reflected in v3 documents:
 - Runner Stats grouping fixed to use `runner` not `defaultRunner`
 - Fresh load experience: auto-open Race Setup, blank fields
 - Reset/Restore buttons working with feedback messages
+
+Changes April 18, 2026 (reflected in v4 documents):
+- **Bug fix (commit bfdea7f):** Runner substitutions were lost whenever
+  the user opened Settings and tapped Save. Root cause: `initRaceLegs
+  (preserveActuals=true)` preserved `actualFinish` and `overrideMiles`
+  but not `runner`. Fix: `runner` is now preserved alongside the other
+  two fields. Fresh load and Reset still derive runner names from config.
+- **Code review completed:** Three-reviewer code review identified 3 bugs
+  to fix before race day (CR-01, CR-02, CR-03) and 4 high-value
+  architecture improvements (CR-04 through CR-07). Full detail in
+  `Race_Tracker_Code_Review_Actions_v1.md`.
+
+---
+
+## Known Issues / Watch List
+
+**Fix before race day:**
+- **CR-01 — Runner name apostrophe bug (HIGH):** A runner name containing
+  an apostrophe (e.g. O'Brien) breaks the runner substitution dropdown
+  entirely. Fix: use `data-*` attributes and `addEventListener` instead
+  of inline `onclick="selectRunner('${r}')"` handlers; add `escapeHtml()`
+  for all name insertions into `innerHTML`. Full detail in Code Review
+  Actions doc.
+- **CR-02 — CSV restore comma bug (HIGH):** A team or event name containing
+  a comma exports correctly (quoted) but restores corrupted — naive
+  `row.split(',')` in `restoreFromCSV()` breaks on quoted fields. Fix:
+  replace with a proper RFC 4180 CSV row parser. Full detail in Code
+  Review Actions doc.
+- **CR-03 — Backup file accumulation (MEDIUM):** Every write to a new
+  minute creates a new timestamped CSV file with no cleanup. A 30-hour
+  race produces ~1,800 files. Fix: use a single canonical filename
+  (`ragnar_tracker_current.csv`) for automatic backup; reserve timestamped
+  names for manual Export CSV. Full detail in Code Review Actions doc.
+
+**Ongoing watch list:**
+- **Tim's Leg 8 pace (8.20/mi)** — suspiciously fast. Verify against
+  actual 2025 race records before using as forecasting baseline.
+- **Night Pace Adjustment default (5%)** — working value, not yet
+  validated against historical data.
+- **Android Screen Pinning** — not yet fully verified on ECOPAD tablet.
+  App works correctly without it.
+- **File System Access API on Android** — permission persistence after
+  full Chrome close needs verification on ECOPAD.
 
 ---
 
@@ -155,8 +203,9 @@ All in `/docs` folder of GitHub repo:
 | `Race_Tracker_App_Plan_v7.md` | v7 | Full feature spec |
 | `Race_Tracker_Data_Model_v3.md` | v3 | All data fields |
 | `Race_Tracker_Decisions_Log_v3.md` | v3 | Key decisions + reasoning |
-| `Race_Tracker_Build_Log_v3.md` | v3 | Build history + status |
-| `Race_Tracker_UAT_Checklist_v2.md` | v2 | 16 sections, 110 test cases |
+| `Race_Tracker_Build_Log_v4.md` | v4 | Build history + status |
+| `Race_Tracker_UAT_Checklist_v3.md` | v3 | 16 sections, 111 test cases |
+| `Race_Tracker_Code_Review_Actions_v1.md` | v1 | Code review findings + implementation detail |
 | `Race_Tracker_Wireframes_v3.html` | v3 | 5-screen UI wireframes |
 | `Race_Tracker_Do_Not_Do_v1.md` | v1 | Rejected approaches |
 | `Race_Tracker_Sample_Data_2025.csv` | — | 2025 actual race data |
@@ -177,17 +226,4 @@ Workflow:
 
 ---
 
-## Known Issues / Watch List
-
-- **Tim's Leg 8 pace (8.20/mi)** — suspiciously fast. Verify against
-  actual 2025 race records before using as forecasting baseline.
-- **Night Pace Adjustment default (5%)** — working value, not yet
-  validated against historical data.
-- **Android Screen Pinning** — not yet fully verified on ECOPAD tablet.
-  App works correctly without it.
-- **File System Access API on Android** — permission persistence after
-  full Chrome close needs verification on ECOPAD.
-
----
-
-*Handoff document — April 17, 2026*
+*Handoff document — April 18, 2026*
