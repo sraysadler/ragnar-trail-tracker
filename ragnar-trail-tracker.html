@@ -2181,15 +2181,17 @@
 
   function formatDuration(minutes) {
     if (minutes === null || minutes === undefined) return '—';
-    const h = Math.floor(minutes / 60);
-    const m = Math.round(minutes % 60);
+    let h = Math.floor(minutes / 60);
+    let m = Math.round(minutes % 60);
+    if (m === 60) { m = 0; h++; }
     return `${h}:${String(m).padStart(2, '0')}`;
   }
 
   function formatPaceDisplay(minutesPerMile) {
     if (minutesPerMile === null || minutesPerMile === undefined) return '—';
-    const whole = Math.floor(minutesPerMile);
-    const secs  = Math.round((minutesPerMile - whole) * 60);
+    let whole = Math.floor(minutesPerMile);
+    let secs  = Math.round((minutesPerMile - whole) * 60);
+    if (secs === 60) { secs = 0; whole++; }
     return `${whole}:${String(secs).padStart(2, '0')}/mi`;
   }
 
@@ -2415,9 +2417,10 @@
 
   function formatPace(val) {
     const mins = parsePaceMinutes(val);
-    const whole = Math.floor(mins);
-    const secs  = String(Math.round((mins - whole) * 60)).padStart(2, '0');
-    return `${whole}:${secs} /mi`;
+    let whole = Math.floor(mins);
+    let secs  = Math.round((mins - whole) * 60);
+    if (secs === 60) { secs = 0; whole++; }
+    return `${whole}:${String(secs).padStart(2, '0')} /mi`;
   }
 
   function formatAdjustment(val) {
