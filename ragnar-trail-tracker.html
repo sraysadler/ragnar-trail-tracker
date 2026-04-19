@@ -1435,6 +1435,12 @@
     return parseFloat(str) || 12.0;
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}
+    )[c]);
+  }
+
   // Parse miles value: number or string like '4.0 mi'
   function parseMiles(val) {
     if (typeof val === 'number') return val;
@@ -1626,7 +1632,7 @@
       return `
         <div class="table-row"${activeAttr} onclick="openRowModal(${i})">
           <div class="td td-num">${leg.leg}</div>
-          <div class="td">${leg.runner}</div>
+          <div class="td">${escapeHtml(leg.runner)}</div>
           <div class="td td-loop">${leg.initial}</div>
           <div class="td"><span class="${startClass}">${leg.startTimeStr}</span></div>
           <div class="td"><span class="time-estimated">${leg.estFinishStr}</span></div>
@@ -2209,11 +2215,11 @@
       cfg.runner1, cfg.runner2, cfg.runner3, cfg.runner4,
       cfg.runner5, cfg.runner6, cfg.runner7, cfg.runner8,
     ];
-    const runnerOptions = runners.map(r => `
+    const runnerOptions = runners.map((r, i) => `
       <div class="modal-runner-option${r === leg.runner ? ' selected' : ''}"
-           data-runner="${r}"
-           onclick="selectRunner('${r}')">
-        <span>${r}</span>
+           data-runner="${escapeHtml(r)}"
+           data-runner-index="${i}">
+        <span>${escapeHtml(r)}</span>
         <span class="runner-check">${r === leg.runner ? '✓' : ''}</span>
       </div>`
     ).join('');
@@ -2237,7 +2243,7 @@
         <div class="modal-runner-container">
           <div class="modal-runner-field"
                onclick="event.stopPropagation(); toggleRunnerDropdown()">
-            <span class="modal-runner-name" id="runnerSelectedName">${leg.runner}</span>
+            <span class="modal-runner-name" id="runnerSelectedName">${escapeHtml(leg.runner)}</span>
             <span class="modal-runner-chevron" id="runnerChevron">▼</span>
           </div>
           <div class="modal-runner-list" id="runnerDropdownList">
@@ -2306,6 +2312,18 @@
       });
       milesEl.addEventListener('pointerup',    clearHold);
       milesEl.addEventListener('pointerleave', clearHold);
+    }
+
+    // Delegated click handler for runner dropdown options (avoids inline onclick with special chars)
+    const dropdownList = document.getElementById('runnerDropdownList');
+    if (dropdownList) {
+      dropdownList.addEventListener('click', (e) => {
+        const option = e.target.closest('[data-runner-index]');
+        if (!option) return;
+        const idx = Number(option.dataset.runnerIndex);
+        const cfg2 = loadConfig();
+        selectRunner(cfg2[`runner${idx + 1}`] || '');
+      });
     }
 
     document.getElementById('rowModal').classList.add('visible');
@@ -2743,7 +2761,7 @@
 
       return `<div class="rs-runner-section">
         <div class="rs-runner-header">
-          <div class="rs-runner-name">${name}</div>
+          <div class="rs-runner-name">${escapeHtml(name)}</div>
           <div class="rs-runner-summary${summaryClass}">${summaryText}</div>
         </div>
         ${colHeader}
