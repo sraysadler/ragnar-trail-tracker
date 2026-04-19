@@ -2864,7 +2864,7 @@
     if (!hasPermission) return;
 
     try {
-      const filename = buildBackupFilename();
+      const filename = 'ragnar_tracker_current.csv';
       const csv = generateCSV();
       const fileHandle = await _backupFolderHandle.getFileHandle(filename, { create: true });
       const writable = await fileHandle.createWritable();
