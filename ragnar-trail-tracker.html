@@ -2996,14 +2996,38 @@
     }
   }
 
+  function parseCSVRow(row) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (c === '"') {
+        if (inQuotes && row[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (c === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += c;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
   function restoreFromCSV(csvText) {
     const lines = csvText.split('\n');
 
     // Parse [Config] section
     const cfgHeaderIdx = lines.findIndex(l => l.trim() === '[Config]');
     if (cfgHeaderIdx >= 0) {
-      const keys = lines[cfgHeaderIdx + 1].split(',');
-      const vals = lines[cfgHeaderIdx + 2].split(',');
+      const keys = parseCSVRow(lines[cfgHeaderIdx + 1]);
+      const vals = parseCSVRow(lines[cfgHeaderIdx + 2]);
       const cfg = loadConfig();
       const colMap = {
         'Team Name': 'teamName', 'Event Name': 'eventName',
@@ -3023,7 +3047,7 @@
     // Parse [Race Data] section — restore actualFinish values
     const dataHeaderIdx = lines.findIndex(l => l.trim() === '[Race Data]');
     if (dataHeaderIdx >= 0) {
-      const headers = lines[dataHeaderIdx + 1].split(',');
+      const headers = parseCSVRow(lines[dataHeaderIdx + 1]);
       const actualFinishCol = headers.indexOf('Actual Finish');
       const legCol = headers.indexOf('Leg');
 
@@ -3031,7 +3055,7 @@
       for (let i = dataHeaderIdx + 2; i < lines.length; i++) {
         const row = lines[i];
         if (!row.trim() || row.startsWith('[')) break;
-        const cols = row.split(',');
+        const cols = parseCSVRow(row);
         const legNum = parseInt(cols[legCol]);
         const actualFinish = cols[actualFinishCol] ? cols[actualFinishCol].trim() : '';
         if (legNum >= 1 && legNum <= 24 && actualFinish) {
