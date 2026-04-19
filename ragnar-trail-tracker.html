@@ -2547,7 +2547,12 @@
   }
 
   function saveConfig() {
-    const cfg = loadConfig();
+    const oldCfg = loadConfig();
+    // Snapshot old runner names before overwriting
+    const oldNames = {};
+    for (let s = 1; s <= 8; s++) oldNames[s] = oldCfg[`runner${s}`] || '';
+
+    const cfg = oldCfg;
     cfg.teamName        = document.querySelector('[data-cfg="teamName"]').value.trim();
     cfg.eventName       = document.querySelector('[data-cfg="eventName"]').value.trim();
     cfg.raceStartTime   = document.querySelector('[data-cfg="raceStartTime"]').textContent.trim();
@@ -2567,11 +2572,25 @@
     cfg.nightStart      = document.querySelector('[data-cfg="nightStart"]').textContent.trim();
     cfg.nightEnd        = document.querySelector('[data-cfg="nightEnd"]').textContent.trim();
     localStorage.setItem('raceConfig', JSON.stringify(cfg));
+
+    // Propagate runner name changes to legs.
+    // For each leg, compute its slot. If the slot's name changed, override
+    // both defaultRunner and runner with the new name. If unchanged, leave
+    // runner as-is (preserving any manual substitution).
+    const legs = loadRaceLegs();
+    legs.forEach(leg => {
+      const slot    = ((leg.legNumber - 1) % 8) + 1;
+      const newName = cfg[`runner${slot}`] || '';
+      if (newName !== oldNames[slot]) {
+        leg.defaultRunner = newName;
+        leg.runner        = newName;
+      }
+    });
+    localStorage.setItem('raceLegs', JSON.stringify(legs));
+
     // Update header immediately
     document.querySelector('.team-name').textContent  = cfg.teamName;
     document.querySelector('.event-name').textContent = cfg.eventName;
-    // Rebuild raceLegs with new runner names, preserving actual finish times
-    initRaceLegs(true);
     hideConfig();
     fullRender();
   }
